@@ -23,15 +23,15 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getAnnotations } from "../../services/apiAnnotations";
 
-export function useAnnotations() {
+export function useAnnotations({ evaluationId } = {}) {
   const {
     status,
     data: annotations,
     error,
     isLoading,
   } = useQuery({
-    queryKey: ["annotations"],
-    queryFn: getAnnotations,
+    queryKey: ["annotations", evaluationId ?? null],
+    queryFn: () => getAnnotations({ evaluationId }),
   });
 
   return { status, annotations, error, isLoading };

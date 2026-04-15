@@ -21,11 +21,12 @@
 
 import { getCookie } from "./utils";
 
-export async function getAnnotations() {
-  const response = await fetch("/api/annotations", {
-    method: "GET",
-    credentials: "include",
-  });
+export async function getAnnotations({ evaluationId } = {}) {
+  const url = evaluationId
+    ? `/api/annotations?evaluation_id=${evaluationId}`
+    : "/api/annotations";
+
+  const response = await fetch(url, { method: "GET", credentials: "include" });
 
   if (!response.ok) {
     throw new Error(`Get annotations failed: ${response.status}`);

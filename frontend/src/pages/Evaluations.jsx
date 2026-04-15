@@ -69,10 +69,10 @@ export default function EvaluationsPage() {
           .filter((e) => !e["isFinished"])
           .map((evaluation) => {
             return (
-              <li className="tw-mb-2">
+              <li className="tw-mb-2" key={evaluation["id"]}>
                 <Link
                   className="tw-text-blue-500 hover:tw-text-blue-600 hover:tw-underline"
-                  to={`/evaluations/${evaluation["id"]}`}
+                  to={`/annotate?evaluation=${evaluation["id"]}`}
                 >
                   {evaluation["name"]}
                 </Link>

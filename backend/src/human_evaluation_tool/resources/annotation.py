@@ -64,8 +64,14 @@ def read_annotations() -> ResponseReturnValue:
     if identity is None:
         return {"message": "Missing user identity"}, 401
 
+    filters: dict[str, Any] = {"userId": int(identity)}
+
+    evaluation_id = request.args.get("evaluation_id", type=int)
+    if evaluation_id is not None:
+        filters["evaluationId"] = evaluation_id
+
     annotations = (
-        db.session.execute(select(Annotation).filter_by(userId=int(identity)))
+        db.session.execute(select(Annotation).filter_by(**filters))
         .scalars()
         .all()
     )

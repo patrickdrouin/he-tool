@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import Spinner from "../components/Spinner";
 import AnnotateInstance from "../features/annotations/AnnotateInstance";
@@ -29,7 +30,11 @@ import { clamp } from "../services/utils";
 export default function AnnotatePage() {
   const containerRef = useRef(null);
   const [currentAnnotation, setCurrentAnnotation] = useState(0);
-  const { status, annotations, isLoading } = useAnnotations();
+  const [searchParams] = useSearchParams();
+  const evaluationId = searchParams.get("evaluation")
+    ? parseInt(searchParams.get("evaluation"), 10)
+    : undefined;
+  const { status, annotations, isLoading } = useAnnotations({ evaluationId });
 
   function getUnannotatedLength() {
     return annotations.filter((a) => !a["isAnnotated"]).length;
