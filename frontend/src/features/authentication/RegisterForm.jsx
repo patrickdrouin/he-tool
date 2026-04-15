@@ -20,17 +20,38 @@
  */
 
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import LanguageSelector from "../../components/LanguageSelector";
+import { register } from "../../services/apiAuth";
 
 export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm_password, setConfirmPassword] = useState("");
-  const [native_language, setNativeLanguage] = useState("ja");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [nativeLanguage, setNativeLanguage] = useState("fr");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await register({ email, password, nativeLanguage });
+      toast.success("Account created. You can now log in.");
+      navigate("/login");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -43,6 +64,7 @@ export default function RegisterForm() {
           </label>
           <input
             className="form-control form-control-lg"
+            disabled={isLoading}
             id="email"
             name="email"
             onChange={(e) => setEmail(e.target.value)}
@@ -57,6 +79,7 @@ export default function RegisterForm() {
           </label>
           <input
             className="form-control form-control-lg"
+            disabled={isLoading}
             id="password"
             name="password"
             onChange={(e) => setPassword(e.target.value)}
@@ -71,12 +94,13 @@ export default function RegisterForm() {
           </label>
           <input
             className="form-control form-control-lg"
+            disabled={isLoading}
             id="confirm_password"
             name="confirm_password"
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             type="password"
-            value={confirm_password}
+            value={confirmPassword}
           />
         </div>
         <div className="form-group tw-my-2">
@@ -85,17 +109,22 @@ export default function RegisterForm() {
           </label>
           <LanguageSelector
             className="form-control form-control-lg"
+            disabled={isLoading}
             id="native_language"
             name="native_language"
             onChange={(e) => setNativeLanguage(e.target.value)}
             required
-            value={native_language}
+            value={nativeLanguage}
           />
         </div>
       </fieldset>
-      <div className="form-group tw-mt-2 tw-text-right">
+      <div className="form-group tw-mt-2 tw-flex tw-items-center tw-justify-between">
+        <Link className="tw-text-sm" to="/login">
+          Already have an account? Log in
+        </Link>
         <input
           className="btn btn-outline-info"
+          disabled={isLoading}
           id="submit"
           name="submit"
           type="submit"

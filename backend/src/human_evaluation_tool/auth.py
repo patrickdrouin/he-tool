@@ -43,6 +43,42 @@ from .models import User
 bp = Blueprint("auth", __name__)
 
 
+@bp.post("/api/auth/register")
+def register() -> ResponseReturnValue:
+    """Public endpoint to create a new user account."""
+
+    from datetime import datetime
+
+    from sqlalchemy.exc import SQLAlchemyError
+
+    data = request.get_json(silent=True) or {}
+    required_fields = ["email", "password", "nativeLanguage"]
+    if any(field not in data for field in required_fields):
+        return {"message": "Missing required field"}, 422
+
+    existing = db.session.execute(
+        select(User).filter_by(email=data["email"])
+    ).scalar_one_or_none()
+    if existing is not None:
+        return {"message": "An account with that email already exists"}, 409
+
+    try:
+        now = datetime.now()
+        user = User(
+            email=data["email"],
+            password=bcrypt.generate_password_hash(data["password"]).decode("utf-8"),
+            nativeLanguage=data["nativeLanguage"],
+            createdAt=now,
+            updatedAt=now,
+        )
+        db.session.add(user)
+        db.session.commit()
+        return {"message": "Account created successfully"}, 201
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
+
+
 _F = TypeVar("_F", bound=Callable[..., ResponseReturnValue])
 
 

@@ -58,6 +58,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/about" element={<AboutPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route
@@ -70,7 +71,6 @@ export default function App() {
             <Route path="/annotate" element={<AnnotatePage />} />
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluations/:id" element={<EvaluationDetailPage />} />
-            <Route path="/register" element={<RegisterPage />} />
           </Route>
           <Route
             element={

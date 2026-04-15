@@ -19,6 +19,21 @@
  * Written by Giovanni G. De Giacomo <giovanni@yaraku.com>, August 2023
  */
 
+export async function register({ email, password, nativeLanguage }) {
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, nativeLanguage }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Registration failed: ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function login({ email, password, remember }) {
   const response = await fetch("/api/auth/login", {
     method: "POST",

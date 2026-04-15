@@ -20,6 +20,7 @@
  */
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { useLogin } from "./useLogin";
 
@@ -83,7 +84,10 @@ export default function LoginForm() {
           </label>
         </div>
       </fieldset>
-      <div className="form-group tw-my-2 tw-text-right">
+      <div className="form-group tw-mt-2 tw-flex tw-items-center tw-justify-between">
+        <Link className="tw-text-sm" to="/register">
+          Don't have an account? Sign up
+        </Link>
         <input
           className="btn btn-outline-info"
           disabled={isLoading}
