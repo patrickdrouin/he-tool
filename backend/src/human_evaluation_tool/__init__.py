@@ -174,6 +174,28 @@ def create_app(config_override: Mapping[str, Any] | None = None) -> Flask:
         role = "admin" if is_admin else "user"
         click.echo(f"Created {role} {email!r} (id={user.id}).")
 
+    @app.cli.command("make-admin")
+    @click.argument("email")
+    def make_admin_command(email: str) -> None:
+        """Grant admin privileges to an existing user.
+
+        \b
+        Example:
+            flask make-admin user@example.com
+        """
+        from .models import User
+
+        user = db.session.execute(
+            select(User).filter_by(email=email)
+        ).scalar_one_or_none()
+        if user is None:
+            click.echo(f"Error: no user with email {email!r}.", err=True)
+            raise SystemExit(1)
+
+        user.isAdmin = True
+        db.session.commit()
+        click.echo(f"User {email!r} is now an admin.")
+
     @app.cli.command("import-json")
     @click.argument("json_file", type=click.Path(exists=True))
     @click.option("--evaluation", "-e", required=True, help="Evaluation project name.")
