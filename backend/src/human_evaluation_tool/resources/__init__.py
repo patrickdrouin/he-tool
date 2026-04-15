@@ -23,13 +23,14 @@ from __future__ import annotations
 
 from flask import Flask
 
-from . import annotation, bitext, document, evaluation, marking, system, user
+from . import admin, annotation, bitext, document, evaluation, marking, system, user
 
 
 def register_resources(app: Flask) -> None:
     """Register all resource blueprints with the Flask app."""
 
     for blueprint in (
+        admin.bp,
         annotation.bp,
         bitext.bp,
         document.bp,

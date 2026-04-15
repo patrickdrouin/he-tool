@@ -34,6 +34,7 @@ import NavigationBar from "./components/NavigationBar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import AboutPage from "./pages/About";
+import AdminPage from "./pages/Admin";
 import AnnotatePage from "./pages/Annotate";
 import EvaluationDetailPage from "./pages/EvaluationDetail";
 import EvaluationsPage from "./pages/Evaluations";
@@ -68,6 +69,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/annotate" element={<AnnotatePage />} />
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluations/:id" element={<EvaluationDetailPage />} />

@@ -79,6 +79,11 @@ export default function NavigationBar() {
                     </Link>
                   </div>
                   <div className="navbar-nav">
+                    <Link className="nav-item nav-link" to="/admin">
+                      Admin
+                    </Link>
+                  </div>
+                  <div className="navbar-nav">
                     <button
                       className="nav-item nav-link"
                       disabled={isLogoutLoading}
