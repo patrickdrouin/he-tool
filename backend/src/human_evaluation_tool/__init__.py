@@ -27,6 +27,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
+import click
 from dotenv import load_dotenv
 from flask import Flask, Response, send_from_directory
 from flask_bcrypt import Bcrypt
@@ -134,6 +135,40 @@ def create_app(config_override: Mapping[str, Any] | None = None) -> Flask:
     register_resources(app)
 
     _maybe_seed_sqlite_sample_data(app)
+
+    @app.cli.command("create-user")
+    @click.argument("email")
+    @click.argument("password")
+    @click.argument("native_language")
+    def create_user_command(email: str, password: str, native_language: str) -> None:
+        """Create a new user.
+
+        \b
+        Usage:
+            flask create-user EMAIL PASSWORD NATIVE_LANGUAGE
+        Example:
+            flask create-user admin@example.com secret fr
+        """
+        from .models import User
+
+        existing = db.session.execute(
+            select(User).filter_by(email=email)
+        ).scalar_one_or_none()
+        if existing is not None:
+            click.echo(f"Error: user {email!r} already exists.", err=True)
+            raise SystemExit(1)
+
+        now = datetime.now()
+        user = User(
+            email=email,
+            password=bcrypt.generate_password_hash(password).decode("utf-8"),
+            nativeLanguage=native_language,
+            createdAt=now,
+            updatedAt=now,
+        )
+        db.session.add(user)
+        db.session.commit()
+        click.echo(f"Created user {email!r} (id={user.id}).")
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
