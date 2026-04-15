@@ -170,6 +170,148 @@ def create_app(config_override: Mapping[str, Any] | None = None) -> Flask:
         db.session.commit()
         click.echo(f"Created user {email!r} (id={user.id}).")
 
+    @app.cli.command("import-json")
+    @click.argument("json_file", type=click.Path(exists=True))
+    @click.option("--evaluation", "-e", required=True, help="Evaluation project name.")
+    @click.option("--system", "-s", required=True, help="MT system name.")
+    @click.option("--user", "-u", "user_emails", multiple=True, required=True,
+                  help="Email of annotator to assign (repeat for multiple users).")
+    def import_json_command(
+        json_file: str, evaluation: str, system: str, user_emails: tuple[str, ...]
+    ) -> None:
+        """Import source/target pairs from a JSON file as an evaluation project.
+
+        \b
+        The JSON file must be a list of objects with "source" and "target" keys:
+            [{"source": "...", "target": "..."}, ...]
+
+        "source" is the original text; "target" is the MT output to annotate.
+
+        \b
+        Example:
+            flask import-json data/sample_en_fr.json \\
+                --evaluation "EN-FR Study 1" \\
+                --system "DeepL" \\
+                --user alice@example.com \\
+                --user bob@example.com
+        """
+        import json as _json
+
+        from sqlalchemy.exc import SQLAlchemyError
+
+        from .models import (
+            Annotation,
+            AnnotationSystem,
+            Bitext,
+            Document,
+            Evaluation,
+            System,
+            User,
+        )
+
+        # Load and validate JSON
+        with open(json_file, encoding="utf-8") as f:
+            pairs = _json.load(f)
+
+        if not isinstance(pairs, list) or not pairs:
+            click.echo("ERROR: JSON file must be a non-empty list.", err=True)
+            raise SystemExit(1)
+
+        missing = [i for i, p in enumerate(pairs) if "source" not in p or "target" not in p]
+        if missing:
+            click.echo(f"ERROR: items at indexes {missing} are missing 'source' or 'target'.", err=True)
+            raise SystemExit(1)
+
+        # Resolve users
+        users: list[User] = []
+        for email in user_emails:
+            u = db.session.execute(select(User).filter_by(email=email)).scalar_one_or_none()
+            if u is None:
+                click.echo(f"ERROR: no user with email {email!r}. Create them first with flask create-user.", err=True)
+                raise SystemExit(1)
+            users.append(u)
+
+        # Check evaluation name is available
+        existing_eval = db.session.execute(
+            select(Evaluation).filter_by(name=evaluation)
+        ).scalar_one_or_none()
+        if existing_eval is not None:
+            click.echo(f"ERROR: evaluation {evaluation!r} already exists.", err=True)
+            raise SystemExit(1)
+
+        try:
+            now = datetime.now()
+
+            document = Document(name=evaluation, createdAt=now, updatedAt=now)
+            db.session.add(document)
+            db.session.flush()
+
+            bitexts = [
+                Bitext(
+                    documentId=document.id,
+                    source=p["source"],
+                    target=None,
+                    createdAt=now,
+                    updatedAt=now,
+                )
+                for p in pairs
+            ]
+            db.session.add_all(bitexts)
+            db.session.flush()
+
+            mt_system = db.session.execute(
+                select(System).filter_by(name=system)
+            ).scalar_one_or_none()
+            if mt_system is None:
+                mt_system = System(name=system, createdAt=now, updatedAt=now)
+                db.session.add(mt_system)
+                db.session.flush()
+
+            eval_obj = Evaluation(
+                name=evaluation,
+                type="error-marking",
+                isFinished=False,
+                createdAt=now,
+                updatedAt=now,
+            )
+            db.session.add(eval_obj)
+            db.session.flush()
+
+            for user in users:
+                for bitext, pair in zip(bitexts, pairs):
+                    annotation = Annotation(
+                        userId=user.id,
+                        evaluationId=eval_obj.id,
+                        bitextId=bitext.id,
+                        isAnnotated=False,
+                        comment=None,
+                        createdAt=now,
+                        updatedAt=now,
+                    )
+                    db.session.add(annotation)
+                    db.session.flush()
+
+                    db.session.add(AnnotationSystem(
+                        annotationId=annotation.id,
+                        systemId=mt_system.id,
+                        translation=pair["target"],
+                        createdAt=now,
+                        updatedAt=now,
+                    ))
+
+            db.session.commit()
+
+            click.echo(
+                f"Imported {len(pairs)} segments into evaluation {evaluation!r} "
+                f"(system: {mt_system.name!r}, "
+                f"annotators: {[u.email for u in users]})."
+            )
+
+        except SQLAlchemyError as exc:
+            db.session.rollback()
+            click.echo(f"ERROR: {exc}", err=True)
+            raise SystemExit(1)
+
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def index(path: str) -> Response:
