@@ -25,7 +25,7 @@ import { useAuth } from "../features/authentication/useAuth";
 import { useLogout } from "../features/authentication/useLogout";
 
 export default function NavigationBar() {
-  const { isAuthenticated, isLoading: isAuthenticationLoading } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading: isAuthenticationLoading } = useAuth();
   const { logout, isLoading: isLogoutLoading } = useLogout();
 
   return (
@@ -78,11 +78,13 @@ export default function NavigationBar() {
                       Annotate
                     </Link>
                   </div>
-                  <div className="navbar-nav">
-                    <Link className="nav-item nav-link" to="/admin">
-                      Admin
-                    </Link>
-                  </div>
+                  {isAdmin && (
+                    <div className="navbar-nav">
+                      <Link className="nav-item nav-link" to="/admin">
+                        Admin
+                      </Link>
+                    </div>
+                  )}
                   <div className="navbar-nav">
                     <button
                       className="nav-item nav-link"

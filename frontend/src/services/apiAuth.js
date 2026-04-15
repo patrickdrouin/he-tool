@@ -76,3 +76,16 @@ export async function validate() {
 
   return true;
 }
+
+export async function getMe() {
+  const response = await fetch("/api/auth/me", {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return await response.json();
+}

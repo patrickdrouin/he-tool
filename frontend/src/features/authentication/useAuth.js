@@ -21,13 +21,24 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { validate as validateApi } from "../../services/apiAuth";
+import { getMe, validate as validateApi } from "../../services/apiAuth";
 
 export function useAuth() {
-  const { data: isAuthenticated, isLoading } = useQuery({
+  const { data: isAuthenticated, isLoading: isAuthLoading } = useQuery({
     queryKey: ["loggedIn"],
     queryFn: validateApi,
   });
 
-  return { isAuthenticated, isLoading };
+  const { data: currentUser, isLoading: isUserLoading } = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+    enabled: !!isAuthenticated,
+  });
+
+  return {
+    isAuthenticated,
+    isAdmin: currentUser?.isAdmin ?? false,
+    currentUser,
+    isLoading: isAuthLoading || isUserLoading,
+  };
 }

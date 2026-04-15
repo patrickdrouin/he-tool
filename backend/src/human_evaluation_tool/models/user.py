@@ -24,7 +24,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .. import Base
@@ -41,6 +41,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(60), nullable=False)
     nativeLanguage: Mapped[str] = mapped_column(String(2), nullable=False)
+    isAdmin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     createdAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
@@ -53,6 +54,7 @@ class User(Base):
             "id": self.id,
             "email": self.email,
             "nativeLanguage": self.nativeLanguage,
+            "isAdmin": self.isAdmin,
             "createdAt": self.createdAt,
             "updatedAt": self.updatedAt,
         }

@@ -18,14 +18,39 @@
  */
 
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
+import LanguageSelector from "../components/LanguageSelector";
 import { importEvaluation } from "../services/apiAdmin";
+import { register } from "../services/apiAuth";
 import { useUsers } from "../features/admin/useUsers";
 
 export default function AdminPage() {
   const { users, isLoading } = useUsers();
+  const queryClient = useQueryClient();
+
+  // — Create user state —
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newLang, setNewLang] = useState("fr");
+  const [isCreating, setIsCreating] = useState(false);
+
+  async function handleCreateUser(e) {
+    e.preventDefault();
+    setIsCreating(true);
+    try {
+      await register({ email: newEmail, password: newPassword, nativeLanguage: newLang });
+      toast.success(`User ${newEmail} created.`);
+      setNewEmail(""); setNewPassword(""); setNewLang("fr");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsCreating(false);
+    }
+  }
   const [evaluationName, setEvaluationName] = useState("");
   const [systemName, setSystemName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -96,6 +121,58 @@ export default function AdminPage() {
 
   return (
     <div className="content-section">
+
+      {/* ── Create User ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Create User
+      </h2>
+      <form onSubmit={handleCreateUser} className="tw-mb-10">
+        <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="new_email">Email</label>
+            <input
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isCreating}
+              id="new_email"
+              type="email"
+              placeholder="user@example.com"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="new_password">Password</label>
+            <input
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isCreating}
+              id="new_password"
+              type="password"
+              placeholder="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="new_lang">Native language</label>
+            <LanguageSelector
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isCreating}
+              id="new_lang"
+              value={newLang}
+              onChange={(e) => setNewLang(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary tw-mb-1" disabled={isCreating} type="submit">
+            {isCreating ? "Creating…" : "Create user"}
+          </button>
+        </div>
+      </form>
+
+      <hr className="tw-my-6" />
+
+      {/* ── Import Evaluation ── */}
       <h2 className="tw-mb-6 tw-text-2xl tw-font-bold tw-text-gray-800">
         Admin — Import Evaluation
       </h2>

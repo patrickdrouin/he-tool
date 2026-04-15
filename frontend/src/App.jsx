@@ -29,6 +29,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 
+import AdminRoute from "./components/AdminRoute";
 import AppLayout from "./components/AppLayout";
 import NavigationBar from "./components/NavigationBar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -69,7 +70,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/annotate" element={<AnnotatePage />} />
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluations/:id" element={<EvaluationDetailPage />} />

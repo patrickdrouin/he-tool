@@ -140,14 +140,16 @@ def create_app(config_override: Mapping[str, Any] | None = None) -> Flask:
     @click.argument("email")
     @click.argument("password")
     @click.argument("native_language")
-    def create_user_command(email: str, password: str, native_language: str) -> None:
+    @click.option("--admin", "is_admin", is_flag=True, default=False,
+                  help="Grant admin privileges to this user.")
+    def create_user_command(email: str, password: str, native_language: str, is_admin: bool) -> None:
         """Create a new user.
 
         \b
         Usage:
-            flask create-user EMAIL PASSWORD NATIVE_LANGUAGE
+            flask create-user EMAIL PASSWORD NATIVE_LANGUAGE [--admin]
         Example:
-            flask create-user admin@example.com secret fr
+            flask create-user admin@example.com secret fr --admin
         """
         from .models import User
 
@@ -163,12 +165,14 @@ def create_app(config_override: Mapping[str, Any] | None = None) -> Flask:
             email=email,
             password=bcrypt.generate_password_hash(password).decode("utf-8"),
             nativeLanguage=native_language,
+            isAdmin=is_admin,
             createdAt=now,
             updatedAt=now,
         )
         db.session.add(user)
         db.session.commit()
-        click.echo(f"Created user {email!r} (id={user.id}).")
+        role = "admin" if is_admin else "user"
+        click.echo(f"Created {role} {email!r} (id={user.id}).")
 
     @app.cli.command("import-json")
     @click.argument("json_file", type=click.Path(exists=True))

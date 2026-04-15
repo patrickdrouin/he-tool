@@ -149,6 +149,18 @@ def validate() -> ResponseReturnValue:
     return jsonify({"success": False}), 200
 
 
+@bp.get("/api/auth/me")
+@_typed_jwt_required()
+def me() -> ResponseReturnValue:
+    """Return the current authenticated user's profile."""
+
+    identity = get_jwt_identity()
+    user = db.session.get(User, int(identity))
+    if user is None:
+        return {"message": "User not found"}, 404
+    return jsonify(user.to_dict()), 200
+
+
 def register_auth_blueprint(app: Flask) -> None:
     """Attach the authentication blueprint to the Flask app."""
 
