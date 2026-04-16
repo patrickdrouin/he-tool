@@ -52,21 +52,7 @@ export default function AnnotateInstance({
   const { mutate: updateAnnotation, isLoading: isAnnotationUpdating } =
     useMutation({
       mutationFn: (data) => updateAnnotationApi(data),
-      onSuccess: (data) => {
-        queryClient.setQueryData(["annotations"], (annotations) => {
-          annotations.map((a) => {
-            if (a["id"] === data["id"]) {
-              return {
-                ...a,
-                isAnnotated: data["isAnnotated"],
-                comment: data["comment"],
-              };
-            }
-
-            return a;
-          });
-        });
-      },
+      onSuccess: () => {},
       onError: (error) => {
         toast.error(
           `Failed to update annotation: ${error}. Please check your connection and try again.`,
