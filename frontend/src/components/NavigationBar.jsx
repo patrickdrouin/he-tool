@@ -79,11 +79,18 @@ export default function NavigationBar() {
                     </Link>
                   </div>
                   {isAdmin && (
-                    <div className="navbar-nav">
-                      <Link className="nav-item nav-link" to="/admin">
-                        Admin
-                      </Link>
-                    </div>
+                    <>
+                      <div className="navbar-nav">
+                        <Link className="nav-item nav-link" to="/results">
+                          Results
+                        </Link>
+                      </div>
+                      <div className="navbar-nav">
+                        <Link className="nav-item nav-link" to="/admin">
+                          Admin
+                        </Link>
+                      </div>
+                    </>
                   )}
                   <div className="navbar-nav">
                     <button

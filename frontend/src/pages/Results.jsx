@@ -28,11 +28,22 @@ import { getEvaluationResults } from "../services/apiEvaluations";
 
 import "../assets/viewer.css";
 
+function downloadTsv(rows, filename) {
+  const blob = new Blob([rows.join("")], { type: "text/tab-separated-values" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function ResultsPage() {
   const [evaluationIndex, setEvaluationIndex] = useState(0);
 
   const { evaluations, isLoading: areEvaluationsLoading } = useEvaluations();
   const evaluationId = evaluations?.[evaluationIndex]?.["id"];
+  const evaluationName = evaluations?.[evaluationIndex]?.["name"] ?? "results";
 
   const { data: evaluationResults, isLoading: areResultsLoading } = useQuery({
     queryKey: ["evaluationResults", evaluationId],
@@ -58,16 +69,30 @@ export default function ResultsPage() {
 
   return (
     <div className="tw-m-4">
-      <div className="tw-flex tw-flex-row">
-        <h1 className="tw-text-lg tw-font-bold">Evaluation: </h1>
+      <div className="tw-flex tw-flex-row tw-items-center tw-gap-4 tw-flex-wrap">
+        <h1 className="tw-text-lg tw-font-bold">Evaluation:</h1>
         <select
           value={evaluationIndex}
-          onChange={(e) => setEvaluationIndex(e.target.value)}
+          onChange={(e) => setEvaluationIndex(Number(e.target.value))}
+          className="form-control tw-w-auto"
         >
-          {evaluations.map((evaluation, index) => {
-            return <option value={index}>{evaluation["name"]}</option>;
-          })}
+          {evaluations.map((evaluation, index) => (
+            <option key={evaluation["id"]} value={index}>{evaluation["name"]}</option>
+          ))}
         </select>
+        {evaluationResults && evaluationResults.length > 0 && (
+          <button
+            className="btn btn-secondary tw-ml-auto"
+            onClick={() =>
+              downloadTsv(
+                evaluationResults,
+                `${evaluationName.replace(/\s+/g, "_")}_results.tsv`
+              )
+            }
+          >
+            Download TSV
+          </button>
+        )}
       </div>
       <hr />
       <div id="mqm"></div>

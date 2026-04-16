@@ -22,7 +22,6 @@
 import {
   BrowserRouter,
   Navigate,
-  Outlet,
   Routes,
   Route,
 } from "react-router-dom";
@@ -71,18 +70,10 @@ export default function App() {
             }
           >
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+            <Route path="/results" element={<AdminRoute><ResultsPage /></AdminRoute>} />
             <Route path="/annotate" element={<AnnotatePage />} />
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluations/:id" element={<EvaluationDetailPage />} />
-          </Route>
-          <Route
-            element={
-              <ProtectedRoute>
-                <Outlet />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/results" element={<ResultsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
