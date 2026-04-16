@@ -214,7 +214,7 @@ def assign_evaluation() -> ResponseReturnValue:
     already = db.session.execute(
         select(Annotation).filter_by(
             evaluationId=evaluation.id, userId=user.id
-        )
+        ).limit(1)
     ).scalar_one_or_none()
     if already is not None:
         return {"message": f"User '{data['user_email']}' is already assigned to this evaluation"}, 409
