@@ -242,33 +242,35 @@ export default function MarkingItem({
           <span
             id={wordIndex}
             className={getClassByIndex(wordIndex)}
-            onContextMenu={getContextMenuByIndex(wordIndex)}
+            onContextMenu={isSource ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
           >
             {word.concat(" ")}
           </span>
         );
       })}
-      <ClickOutsideListener
-        enabled={shouldShowMarkingPopup()}
-        onClickOutside={(_) => {
-          setSelectedMarking(null);
-          setSelection(null);
-        }}
-      >
-        {shouldShowMarkingPopup() && (
-          <MarkingPopup
-            containerRef={containerRef.current}
-            marking={annotationMarkings[selectedMarking]}
-            selection={selection}
-            disabled={isUpdateMarkingLoading}
-            mouseX={mouseX}
-            mouseY={mouseY}
-            createMarking={createMarking}
-            deleteMarking={deleteMarking}
-            updateMarking={updateMarking}
-          />
-        )}
-      </ClickOutsideListener>
+      {!isSource && (
+        <ClickOutsideListener
+          enabled={shouldShowMarkingPopup()}
+          onClickOutside={(_) => {
+            setSelectedMarking(null);
+            setSelection(null);
+          }}
+        >
+          {shouldShowMarkingPopup() && (
+            <MarkingPopup
+              containerRef={containerRef.current}
+              marking={annotationMarkings[selectedMarking]}
+              selection={selection}
+              disabled={isUpdateMarkingLoading}
+              mouseX={mouseX}
+              mouseY={mouseY}
+              createMarking={createMarking}
+              deleteMarking={deleteMarking}
+              updateMarking={updateMarking}
+            />
+          )}
+        </ClickOutsideListener>
+      )}
     </div>
   );
 }
