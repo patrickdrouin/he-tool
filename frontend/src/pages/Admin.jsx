@@ -23,12 +23,14 @@ import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
 import LanguageSelector from "../components/LanguageSelector";
-import { importEvaluation } from "../services/apiAdmin";
+import { assignEvaluation, importEvaluation } from "../services/apiAdmin";
 import { register } from "../services/apiAuth";
 import { useUsers } from "../features/admin/useUsers";
+import { useEvaluations } from "../features/evaluations/useEvaluations";
 
 export default function AdminPage() {
-  const { users, isLoading } = useUsers();
+  const { users, isLoading: isUsersLoading } = useUsers();
+  const { evaluations, isLoading: isEvaluationsLoading } = useEvaluations();
   const queryClient = useQueryClient();
 
   // — Create user state —
@@ -51,6 +53,35 @@ export default function AdminPage() {
       setIsCreating(false);
     }
   }
+
+  // — Assign evaluation state —
+  const [assignEvalId, setAssignEvalId] = useState("");
+  const [assignUserEmail, setAssignUserEmail] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  async function handleAssign(e) {
+    e.preventDefault();
+    if (!assignEvalId) { toast.error("Select an evaluation."); return; }
+    if (!assignUserEmail) { toast.error("Select a user."); return; }
+
+    setIsAssigning(true);
+    try {
+      const result = await assignEvaluation({
+        evaluationId: Number(assignEvalId),
+        userEmail: assignUserEmail,
+      });
+      toast.success(result.message);
+      setAssignEvalId("");
+      setAssignUserEmail("");
+      queryClient.invalidateQueries({ queryKey: ["annotations"] });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsAssigning(false);
+    }
+  }
+
+  // — Import evaluation state —
   const [evaluationName, setEvaluationName] = useState("");
   const [systemName, setSystemName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -110,6 +141,7 @@ export default function AdminPage() {
       setPairs(null);
       setFileName("");
       fileRef.current.value = "";
+      queryClient.invalidateQueries({ queryKey: ["evaluations"] });
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -117,7 +149,7 @@ export default function AdminPage() {
     }
   }
 
-  if (isLoading) return <Spinner />;
+  if (isUsersLoading || isEvaluationsLoading) return <Spinner />;
 
   return (
     <div className="content-section">
@@ -166,6 +198,56 @@ export default function AdminPage() {
           </div>
           <button className="btn btn-primary tw-mb-1" disabled={isCreating} type="submit">
             {isCreating ? "Creating…" : "Create user"}
+          </button>
+        </div>
+      </form>
+
+      <hr className="tw-my-6" />
+
+      {/* ── Assign Evaluation ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Assign Evaluation
+      </h2>
+      <form onSubmit={handleAssign} className="tw-mb-10">
+        <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="assign_eval">
+              Evaluation
+            </label>
+            <select
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isAssigning}
+              id="assign_eval"
+              value={assignEvalId}
+              onChange={(e) => setAssignEvalId(e.target.value)}
+              required
+            >
+              <option value="">— select —</option>
+              {evaluations.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="assign_user">
+              User
+            </label>
+            <select
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isAssigning}
+              id="assign_user"
+              value={assignUserEmail}
+              onChange={(e) => setAssignUserEmail(e.target.value)}
+              required
+            >
+              <option value="">— select —</option>
+              {users.map((u) => (
+                <option key={u.email} value={u.email}>{u.email}</option>
+              ))}
+            </select>
+          </div>
+          <button className="btn btn-primary tw-mb-1" disabled={isAssigning} type="submit">
+            {isAssigning ? "Assigning…" : "Assign"}
           </button>
         </div>
       </form>

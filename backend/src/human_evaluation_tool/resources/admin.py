@@ -159,3 +159,103 @@ def import_evaluation() -> ResponseReturnValue:
     except SQLAlchemyError as exc:
         db.session.rollback()
         return {"message": str(exc)}, 500
+
+
+@bp.post("/api/admin/assign")
+@jwt_required()
+def assign_evaluation() -> ResponseReturnValue:
+    """Assign an existing evaluation to an existing user.
+
+    Request body:
+    {
+        "evaluation_id": 3,
+        "user_email": "alice@example.com"
+    }
+
+    Creates Annotation + AnnotationSystem rows for every bitext in the
+    evaluation for the given user.  Returns 409 if the user is already
+    fully assigned (i.e. already has an annotation for the first bitext).
+    """
+
+    data = request.get_json(silent=True) or {}
+    missing = [f for f in ("evaluation_id", "user_email") if f not in data]
+    if missing:
+        return {"message": f"Missing required fields: {', '.join(missing)}"}, 422
+
+    evaluation = db.session.get(Evaluation, int(data["evaluation_id"]))
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    user = db.session.execute(
+        select(User).filter_by(email=data["user_email"])
+    ).scalar_one_or_none()
+    if user is None:
+        return {"message": f"No user with email '{data['user_email']}'"}, 404
+
+    # Collect one representative existing annotation per bitext so we can copy
+    # the system + translation data.
+    existing_annotations = (
+        db.session.execute(
+            select(Annotation).filter_by(evaluationId=evaluation.id)
+        )
+        .scalars()
+        .all()
+    )
+
+    if not existing_annotations:
+        return {"message": "Evaluation has no segments to assign"}, 422
+
+    # Build a map: bitextId -> first existing Annotation for that bitext
+    bitext_to_annotation: dict[int, Annotation] = {}
+    for ann in existing_annotations:
+        bitext_to_annotation.setdefault(ann.bitextId, ann)
+
+    # Check if user is already assigned to this evaluation
+    already = db.session.execute(
+        select(Annotation).filter_by(
+            evaluationId=evaluation.id, userId=user.id
+        )
+    ).scalar_one_or_none()
+    if already is not None:
+        return {"message": f"User '{data['user_email']}' is already assigned to this evaluation"}, 409
+
+    try:
+        now = datetime.now()
+
+        for bitext_id, ref_ann in bitext_to_annotation.items():
+            annotation = Annotation(
+                userId=user.id,
+                evaluationId=evaluation.id,
+                bitextId=bitext_id,
+                isAnnotated=False,
+                comment=None,
+                createdAt=now,
+                updatedAt=now,
+            )
+            db.session.add(annotation)
+            db.session.flush()
+
+            # Copy every system+translation from the reference annotation
+            ref_systems = db.session.execute(
+                select(AnnotationSystem).filter_by(annotationId=ref_ann.id)
+            ).scalars().all()
+
+            for ref_sys in ref_systems:
+                db.session.add(AnnotationSystem(
+                    annotationId=annotation.id,
+                    systemId=ref_sys.systemId,
+                    translation=ref_sys.translation,
+                    createdAt=now,
+                    updatedAt=now,
+                ))
+
+        db.session.commit()
+
+        n = len(bitext_to_annotation)
+        return jsonify({
+            "message": f"Assigned {n} segments of '{evaluation.name}' to '{user.email}'",
+        }), 201
+
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
