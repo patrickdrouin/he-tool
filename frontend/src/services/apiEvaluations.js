@@ -47,6 +47,19 @@ export async function getEvaluationAnnotations({ id }) {
   return await response.json();
 }
 
+export async function getEvaluationIaa({ id }) {
+  const response = await fetch(`/api/evaluations/${id}/iaa`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Get IAA for evaluation ${id} failed: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
 export async function getEvaluationResults({ id }) {
   const response = await fetch(`/api/evaluations/${id}/results`, {
     method: "GET",

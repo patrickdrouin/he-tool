@@ -21,6 +21,7 @@ Written by Giovanni G. De Giacomo <giovanni@yaraku.com>, August 2023
 
 from __future__ import annotations
 
+import math
 from datetime import datetime
 from typing import Iterable
 
@@ -196,6 +197,153 @@ def read_evaluation_results(evaluation_id: int) -> ResponseReturnValue:
             results.append("\t".join(row) + "\n")
 
     return jsonify(results), 200
+
+
+_SEVERITY_WEIGHT: dict[str, float] = {
+    "no-error": 0.0,
+    "not-judgeable": 0.0,
+    "minor": 1.0,
+    "major": 5.0,
+    "critical": 25.0,
+}
+
+
+def _pearson(xs: list[float], ys: list[float]) -> float | None:
+    """Return Pearson r for two equal-length lists, or None if undefined."""
+    n = len(xs)
+    if n < 2:
+        return None
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    num = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    den = math.sqrt(
+        sum((x - mx) ** 2 for x in xs) * sum((y - my) ** 2 for y in ys)
+    )
+    return num / den if den > 0 else None
+
+
+def _spearman(xs: list[float], ys: list[float]) -> float | None:
+    """Return Spearman ρ for two equal-length lists, or None if undefined."""
+    n = len(xs)
+    if n < 2:
+        return None
+
+    def _ranks(vals: list[float]) -> list[float]:
+        indexed = sorted(enumerate(vals), key=lambda iv: iv[1])
+        ranks = [0.0] * n
+        i = 0
+        while i < n:
+            j = i
+            while j < n - 1 and indexed[j + 1][1] == indexed[j][1]:
+                j += 1
+            avg_rank = (i + j) / 2 + 1
+            for k in range(i, j + 1):
+                ranks[indexed[k][0]] = avg_rank
+            i = j + 1
+        return ranks
+
+    return _pearson(_ranks(xs), _ranks(ys))
+
+
+@bp.get("/api/evaluations/<int:evaluation_id>/iaa")
+@jwt_required()
+def read_evaluation_iaa(evaluation_id: int) -> ResponseReturnValue:
+    """Return inter-annotator agreement statistics for an evaluation.
+
+    Response shape:
+    {
+      "annotators": ["alice@example.com", "bob@example.com"],
+      "segments": [
+        {
+          "bitext_id": 1,
+          "source": "...",
+          "scores": {"alice@example.com": 6.0, "bob@example.com": 1.0}
+        },
+        ...
+      ],
+      "correlations": [
+        {
+          "annotator_a": "alice@example.com",
+          "annotator_b": "bob@example.com",
+          "n_segments": 20,
+          "pearson": 0.87,
+          "spearman": 0.82
+        }
+      ]
+    }
+    """
+
+    if db.session.get(Evaluation, evaluation_id) is None:
+        return {"message": "Evaluation not found"}, 404
+
+    annotations = (
+        db.session.execute(select(Annotation).filter_by(evaluationId=evaluation_id))
+        .scalars()
+        .all()
+    )
+
+    # Build: bitext_id -> annotator_email -> MQM score
+    scores: dict[int, dict[str, float]] = {}
+    annotator_set: set[str] = set()
+
+    for annotation in annotations:
+        user = db.session.get(User, annotation.userId)
+        if user is None:
+            continue
+        email = user.email
+        annotator_set.add(email)
+
+        markings = (
+            db.session.execute(select(Marking).filter_by(annotationId=annotation.id))
+            .scalars()
+            .all()
+        )
+        segment_score = sum(
+            _SEVERITY_WEIGHT.get(m.errorSeverity, 0.0)
+            for m in markings
+            if not m.isSource
+        )
+
+        scores.setdefault(annotation.bitextId, {})[email] = segment_score
+
+    annotators = sorted(annotator_set)
+
+    # Build segment list (only bitexts annotated by at least one user)
+    segments = []
+    for bitext_id, user_scores in sorted(scores.items()):
+        bitext = db.session.get(Bitext, bitext_id)
+        segments.append({
+            "bitext_id": bitext_id,
+            "source": bitext.source if bitext else "",
+            "scores": user_scores,
+        })
+
+    # Pairwise correlations over segments both annotators have scored
+    correlations = []
+    for i, a in enumerate(annotators):
+        for b in annotators[i + 1:]:
+            shared = [
+                (seg["scores"][a], seg["scores"][b])
+                for seg in segments
+                if a in seg["scores"] and b in seg["scores"]
+            ]
+            if not shared:
+                continue
+            xs, ys = zip(*shared)
+            xs, ys = list(xs), list(ys)
+            correlations.append({
+                "annotator_a": a,
+                "annotator_b": b,
+                "n_segments": len(shared),
+                "pearson": _pearson(xs, ys),
+                "spearman": _spearman(xs, ys),
+            })
+
+    return jsonify({
+        "annotators": annotators,
+        "segments": segments,
+        "correlations": correlations,
+    }), 200
 
 
 @bp.put("/api/evaluations/<int:evaluation_id>")
