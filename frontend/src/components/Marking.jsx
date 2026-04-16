@@ -27,6 +27,7 @@ export default function Marking({
   systemId,
   systemIndex,
   annotationMarkings,
+  readOnly,
   source,
   target,
 }) {
@@ -40,6 +41,7 @@ export default function Marking({
           systemId={systemId}
           annotationMarkings={annotationMarkings.filter((m) => m["isSource"])}
           isSource={true}
+          readOnly={true}
           text={source}
         />
       </div>
@@ -51,6 +53,7 @@ export default function Marking({
           systemId={systemId}
           annotationMarkings={annotationMarkings.filter((m) => !m["isSource"])}
           isSource={false}
+          readOnly={readOnly}
           text={target}
         />
       </div>

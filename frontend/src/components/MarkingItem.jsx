@@ -37,6 +37,7 @@ export default function MarkingItem({
   systemId,
   annotationMarkings,
   isSource,
+  readOnly,
   text,
 }) {
   const [selectedMarking, setSelectedMarking] = useState(null);
@@ -242,13 +243,13 @@ export default function MarkingItem({
           <span
             id={wordIndex}
             className={getClassByIndex(wordIndex)}
-            onContextMenu={isSource ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
+            onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
           >
             {word.concat(" ")}
           </span>
         );
       })}
-      {!isSource && (
+      {!isSource && !readOnly && (
         <ClickOutsideListener
           enabled={shouldShowMarkingPopup()}
           onClickOutside={(_) => {

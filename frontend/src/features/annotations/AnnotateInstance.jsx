@@ -38,7 +38,8 @@ export default function AnnotateInstance({
   total,
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
-  const isLastSegment = done === total - 1;
+  const isAnnotated = annotation["isAnnotated"];
+  const isLastSegment = !isAnnotated && done === total - 1;
 
   useEffect(() => {
     setConfirmingFinish(false);
@@ -56,6 +57,15 @@ export default function AnnotateInstance({
   });
   const queryClient = useQueryClient();
 
+  const annotationPayload = (isAnnotatedValue) => ({
+    id: annotation["id"],
+    userId: annotation["userId"],
+    evaluationId: annotation["evaluation"]["id"],
+    bitextId: annotation["bitext"]["id"],
+    isAnnotated: isAnnotatedValue,
+    comment: annotation["comment"] || "",
+  });
+
   const { mutate: updateAnnotation, isLoading: isAnnotationUpdating } =
     useMutation({
       mutationFn: (data) => updateAnnotationApi(data),
@@ -66,22 +76,17 @@ export default function AnnotateInstance({
         );
       },
       onSettled: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["annotations"],
-        });
+        queryClient.invalidateQueries({ queryKey: ["annotations"] });
       },
     });
 
   function handleFinish() {
     setConfirmingFinish(false);
-    updateAnnotation({
-      id: annotation["id"],
-      userId: annotation["userId"],
-      evaluationId: annotation["evaluation"]["id"],
-      bitextId: annotation["bitext"]["id"],
-      isAnnotated: true,
-      comment: "",
-    });
+    updateAnnotation(annotationPayload(true));
+  }
+
+  function handleUnlock() {
+    updateAnnotation(annotationPayload(false));
   }
 
   if (areBitextsLoading || areMarkingsLoading || areSystemsLoading) {
@@ -126,6 +131,7 @@ export default function AnnotateInstance({
                     annotationMarkings={annotationMarkings.filter(
                       (m) => m["systemId"] === system["systemId"],
                     )}
+                    readOnly={isAnnotated}
                     source={annotation["bitext"]["source"]}
                     target={system["translation"]}
                   />
@@ -180,47 +186,62 @@ export default function AnnotateInstance({
               </div>
             ) : null}
 
-            {/* ── Finish button ── */}
+            {/* ── Finish / Unlock button ── */}
             <div className="tw-mt-6 tw-mb-4 tw-w-full">
-              {isLastSegment && !confirmingFinish && (
-                <div className="alert alert-info tw-mb-3 tw-text-sm">
-                  This is your last unannotated segment.
+              {isAnnotated ? (
+                <div className="alert alert-success tw-flex tw-items-center tw-justify-between tw-mb-0">
+                  <span className="tw-font-semibold">&#10003; Segment marked as done</span>
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={isAnnotationUpdating}
+                    onClick={handleUnlock}
+                  >
+                    {isAnnotationUpdating ? <SpinnerMini /> : "Unlock to continue annotation"}
+                  </button>
                 </div>
-              )}
-              {!confirmingFinish ? (
-                <button
-                  className="btn btn-primary tw-w-full"
-                  disabled={isAnnotationUpdating}
-                  onClick={() => setConfirmingFinish(true)}
-                >
-                  {isAnnotationUpdating ? (
-                    <div className="tw-flex tw-justify-center"><SpinnerMini /></div>
-                  ) : (
-                    "Finish"
-                  )}
-                </button>
               ) : (
-                <div className="alert alert-warning tw-flex tw-flex-col tw-gap-3">
-                  <p className="tw-mb-0 tw-font-semibold">
-                    Have you annotated all errors in this segment?
-                  </p>
-                  <div className="tw-flex tw-gap-3">
+                <>
+                  {isLastSegment && !confirmingFinish && (
+                    <div className="alert alert-info tw-mb-3 tw-text-sm">
+                      This is your last unannotated segment.
+                    </div>
+                  )}
+                  {!confirmingFinish ? (
                     <button
-                      className="btn btn-primary"
+                      className="btn btn-primary tw-w-full"
                       disabled={isAnnotationUpdating}
-                      onClick={handleFinish}
+                      onClick={() => setConfirmingFinish(true)}
                     >
-                      {isAnnotationUpdating ? <SpinnerMini /> : "Yes, mark as done"}
+                      {isAnnotationUpdating ? (
+                        <div className="tw-flex tw-justify-center"><SpinnerMini /></div>
+                      ) : (
+                        "Finish"
+                      )}
                     </button>
-                    <button
-                      className="btn btn-secondary"
-                      disabled={isAnnotationUpdating}
-                      onClick={() => setConfirmingFinish(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
+                  ) : (
+                    <div className="alert alert-warning tw-flex tw-flex-col tw-gap-3">
+                      <p className="tw-mb-0 tw-font-semibold">
+                        Have you annotated all errors in this segment?
+                      </p>
+                      <div className="tw-flex tw-gap-3">
+                        <button
+                          className="btn btn-primary"
+                          disabled={isAnnotationUpdating}
+                          onClick={handleFinish}
+                        >
+                          {isAnnotationUpdating ? <SpinnerMini /> : "Yes, mark as done"}
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          disabled={isAnnotationUpdating}
+                          onClick={() => setConfirmingFinish(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
