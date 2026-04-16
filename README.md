@@ -5,17 +5,13 @@ A web-based tool for conducting human evaluation of machine translation outputs 
 ## Features
 
 - User authentication with admin/annotator roles
+- Self-registration for annotators; admins can create, promote, and delete users from the UI
 - MQM error marking with configurable category taxonomy
-- Per-evaluation assignment of annotators
-- Results export as TSV
-- Admin interface for managing users and importing evaluation data
+- Per-evaluation assignment of annotators (at import time or afterwards)
+- Results viewer (Google Marot) with TSV export
+- Inter-annotator agreement: score-level Pearson *r* and Spearman *ρ*
+- Admin interface for managing users and importing/assigning evaluation data
 - PostgreSQL backend with multi-user support
-
-## Demo
-
-Below is a quick video showing how the Human Evaluation Tool looks and works:
-
-https://github.com/yaraku/he-tool/assets/5934186/bb1dcf1c-a1e2-464c-af0a-1225e57eef56
 
 ## Project Structure
 
@@ -138,7 +134,7 @@ podman compose exec app flask create-user admin@example.com yourpassword fr --ad
 podman compose exec app flask make-admin admin@example.com
 ```
 
-Log out and back in after being granted admin — the **Admin** link will appear in the navigation bar.
+Log out and back in after being granted admin — the **Admin**, **Results**, and **Logout** links will appear in the navigation bar.
 
 ---
 
@@ -146,14 +142,19 @@ Log out and back in after being granted admin — the **Admin** link will appear
 
 The Admin page (`/admin`) is only visible to users with admin privileges.
 
-### Creating Users
+### Managing Users
 
-Fill in the **Create User** form at the top of the Admin page:
+The **Manage Users** table lists all registered accounts. For each user you can:
+
+- **Make admin / Remove admin** — toggle admin privileges (takes effect on the user's next login)
+- **Delete** — permanently remove the user and all their data (requires confirmation)
+
+Users can also self-register at `/register`, in which case they start as regular annotators.
+
+To create a user directly from the Admin page, fill in the **Create User** form:
 - Email address
 - Password
 - Native language
-
-Users can also self-register at `/register`, in which case they start as regular annotators (no admin privileges).
 
 ### Importing an Evaluation
 
@@ -189,19 +190,43 @@ podman compose exec app flask import-json data/sample_en_fr.json \
     --user bob@example.com
 ```
 
+### Assigning an Existing Evaluation to a User
+
+To add an annotator to an evaluation that has already been imported, use the **Assign Evaluation** section on the Admin page:
+
+1. Select the evaluation from the dropdown
+2. Select the user to assign
+3. Click **Assign**
+
+This creates a fresh copy of all the evaluation's segments for that user. Existing annotations from other users are not affected.
+
 ---
 
 ## Annotator Workflow
 
 1. **Register** at `/register` (or have an admin create your account)
 2. Go to **Evaluations** in the navigation bar — your assigned evaluations are listed
-3. Click an evaluation to open it in the annotation interface
-4. Right-click on a word (or drag to select multiple words) to open the marking popup
+3. Click an evaluation to open it directly in the annotation interface
+4. Right-click on a word (or drag to select multiple words) in the **MT output row** to open the marking popup
 5. Choose an error category and severity, then click **+** to save the marking
 6. Use **Previous / Next** to move between segments
-7. When finished, all segments are marked as done
+7. Click **Finish** when done with a segment
 
 > **Tip for trackpad users:** two-finger tap = right-click on Mac trackpads.
+
+---
+
+## Results and Inter-Annotator Agreement
+
+The **Results** page (`/results`) is only visible to admins.
+
+Select an evaluation from the dropdown to see:
+
+1. **Inter-Annotator Agreement** — pairwise Pearson *r* and Spearman *ρ* computed over per-segment MQM scores (minor = 1, major = 5, critical = 25). Expand the **Per-segment scores** table to see each annotator's score for every segment. Requires at least two annotators with submitted markings.
+
+2. **Annotations** — the Google Marot MQM viewer showing all markings from all annotators, grouped by rater.
+
+3. **Download TSV** — exports all markings in Marot-compatible TSV format for offline analysis.
 
 ---
 
