@@ -25,8 +25,62 @@ import Spinner from "../components/Spinner";
 import LanguageSelector from "../components/LanguageSelector";
 import { assignEvaluation, importEvaluation } from "../services/apiAdmin";
 import { register } from "../services/apiAuth";
+import { deleteUser, setUserAdmin } from "../services/apiUsers";
 import { useUsers } from "../features/admin/useUsers";
 import { useEvaluations } from "../features/evaluations/useEvaluations";
+
+function UserRow({ user, onRefresh }) {
+  const [busy, setBusy] = useState(false);
+
+  async function handleToggleAdmin() {
+    setBusy(true);
+    try {
+      await setUserAdmin({ id: user.id, isAdmin: !user.isAdmin });
+      onRefresh();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Delete user ${user.email}? This cannot be undone.`)) return;
+    setBusy(true);
+    try {
+      await deleteUser({ id: user.id });
+      onRefresh();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <tr>
+      <td>{user.email}</td>
+      <td>{user.nativeLanguage}</td>
+      <td>{user.isAdmin ? "Yes" : "No"}</td>
+      <td className="tw-space-x-2 tw-whitespace-nowrap">
+        <button
+          className="btn btn-sm btn-outline-secondary"
+          disabled={busy}
+          onClick={handleToggleAdmin}
+        >
+          {user.isAdmin ? "Remove admin" : "Make admin"}
+        </button>
+        <button
+          className="btn btn-sm btn-outline-danger"
+          disabled={busy}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+  );
+}
 
 export default function AdminPage() {
   const { users, isLoading: isUsersLoading } = useUsers();
@@ -201,6 +255,36 @@ export default function AdminPage() {
           </button>
         </div>
       </form>
+
+      <hr className="tw-my-6" />
+
+      {/* ── User List ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Manage Users
+      </h2>
+      {users.length === 0 ? (
+        <p className="tw-text-sm tw-text-gray-500 tw-mb-10">No users found.</p>
+      ) : (
+        <table className="table tw-mb-10 tw-text-sm">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Language</th>
+              <th>Admin</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <UserRow
+                key={u.id}
+                user={u}
+                onRefresh={() => queryClient.invalidateQueries({ queryKey: ["users"] })}
+              />
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <hr className="tw-my-6" />
 

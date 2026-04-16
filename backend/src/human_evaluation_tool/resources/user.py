@@ -129,6 +129,27 @@ def update_user(user_id: int) -> ResponseReturnValue:
         return {"message": str(exc)}, 500
 
 
+@bp.patch("/api/users/<int:user_id>")
+@jwt_required()
+def patch_user(user_id: int) -> ResponseReturnValue:
+    """Partially update a user (e.g. toggle isAdmin)."""
+
+    user = db.session.get(User, user_id)
+    if user is None:
+        return {"message": "User not found"}, 404
+
+    data = request.get_json(silent=True) or {}
+    try:
+        if "isAdmin" in data:
+            user.isAdmin = bool(data["isAdmin"])
+        user.updatedAt = _current_time()
+        db.session.commit()
+        return jsonify(user.to_dict()), 200
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
+
+
 @bp.delete("/api/users/<int:user_id>")
 @jwt_required()
 def delete_user(user_id: int) -> ResponseReturnValue:
