@@ -20,6 +20,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import Marking from "../../components/Marking";
@@ -36,6 +37,12 @@ export default function AnnotateInstance({
   done,
   total,
 }) {
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
+  const isLastSegment = done === total - 1;
+
+  useEffect(() => {
+    setConfirmingFinish(false);
+  }, [annotation["id"]]);
   const { annotationMarkings, isLoading: areMarkingsLoading } =
     useAnnotationMarkings({
       id: annotation["id"],
@@ -65,8 +72,8 @@ export default function AnnotateInstance({
       },
     });
 
-  function handleFinish(e) {
-    e.preventDefault();
+  function handleFinish() {
+    setConfirmingFinish(false);
     updateAnnotation({
       id: annotation["id"],
       userId: annotation["userId"],
@@ -126,19 +133,6 @@ export default function AnnotateInstance({
                 </div>
               );
             })}
-            <button
-              className="btn btn-primary tw-mb-4 tw-w-full"
-              disabled={isAnnotationUpdating}
-              onClick={handleFinish}
-            >
-              {isAnnotationUpdating ? (
-                <div className="tw-flex tw-justify-center">
-                  <SpinnerMini />
-                </div>
-              ) : (
-                "Finish"
-              )}
-            </button>
             <div className="card tw-mb-4">
               <div className="card-header">Reference</div>
               <div className="card-body">
@@ -185,6 +179,50 @@ export default function AnnotateInstance({
                 </div>
               </div>
             ) : null}
+
+            {/* ── Finish button ── */}
+            <div className="tw-mt-6 tw-mb-4 tw-w-full">
+              {isLastSegment && !confirmingFinish && (
+                <div className="alert alert-info tw-mb-3 tw-text-sm">
+                  This is your last unannotated segment.
+                </div>
+              )}
+              {!confirmingFinish ? (
+                <button
+                  className="btn btn-primary tw-w-full"
+                  disabled={isAnnotationUpdating}
+                  onClick={() => setConfirmingFinish(true)}
+                >
+                  {isAnnotationUpdating ? (
+                    <div className="tw-flex tw-justify-center"><SpinnerMini /></div>
+                  ) : (
+                    "Finish"
+                  )}
+                </button>
+              ) : (
+                <div className="alert alert-warning tw-flex tw-flex-col tw-gap-3">
+                  <p className="tw-mb-0 tw-font-semibold">
+                    Have you annotated all errors in this segment?
+                  </p>
+                  <div className="tw-flex tw-gap-3">
+                    <button
+                      className="btn btn-primary"
+                      disabled={isAnnotationUpdating}
+                      onClick={handleFinish}
+                    >
+                      {isAnnotationUpdating ? <SpinnerMini /> : "Yes, mark as done"}
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      disabled={isAnnotationUpdating}
+                      onClick={() => setConfirmingFinish(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
