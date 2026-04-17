@@ -35,6 +35,20 @@ export async function getAnnotations({ evaluationId } = {}) {
   return await response.json();
 }
 
+export async function deleteAnnotation({ id }) {
+  const response = await fetch(`/api/annotations/${id}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: {
+      "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Delete annotation ${id} failed: ${response.status}`);
+  }
+}
+
 export async function updateAnnotation({
   id,
   userId,
