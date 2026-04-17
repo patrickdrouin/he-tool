@@ -39,6 +39,6 @@ export function useAuth() {
     isAuthenticated,
     isAdmin: currentUser?.isAdmin ?? false,
     currentUser,
-    isLoading: isAuthLoading || isUserLoading,
+    isLoading: isAuthLoading || (!!isAuthenticated && isUserLoading),
   };
 }
