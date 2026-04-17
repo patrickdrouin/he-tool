@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
 import LanguageSelector from "../components/LanguageSelector";
-import { assignEvaluation, unassignEvaluation, importEvaluation } from "../services/apiAdmin";
+import { assignEvaluation, unassignEvaluation, importEvaluation, getEvaluationBitexts, deleteEvaluationTask } from "../services/apiAdmin";
 import { register } from "../services/apiAuth";
 import { deleteUser, setUserAdmin } from "../services/apiUsers";
 import { useUsers } from "../features/admin/useUsers";
@@ -161,6 +161,41 @@ export default function AdminPage() {
       toast.error(err.message);
     } finally {
       setIsUnassigning(false);
+    }
+  }
+
+  // — Delete evaluation task state —
+  const [deleteTaskEvalId, setDeleteTaskEvalId] = useState("");
+  const [deleteTaskBitexts, setDeleteTaskBitexts] = useState(null);
+  const [isLoadingBitexts, setIsLoadingBitexts] = useState(false);
+  const [deletingBitextId, setDeletingBitextId] = useState(null);
+
+  async function handleLoadBitexts(evalId) {
+    setDeleteTaskEvalId(evalId);
+    setDeleteTaskBitexts(null);
+    if (!evalId) return;
+    setIsLoadingBitexts(true);
+    try {
+      const rows = await getEvaluationBitexts({ evaluationId: Number(evalId) });
+      setDeleteTaskBitexts(rows);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsLoadingBitexts(false);
+    }
+  }
+
+  async function handleDeleteTask(bitextId) {
+    if (!window.confirm("Delete this task for all users? This removes all annotations and markings and cannot be undone.")) return;
+    setDeletingBitextId(bitextId);
+    try {
+      await deleteEvaluationTask({ evaluationId: Number(deleteTaskEvalId), bitextId });
+      toast.success("Task deleted.");
+      setDeleteTaskBitexts((prev) => prev.filter((b) => b.bitext_id !== bitextId));
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDeletingBitextId(null);
     }
   }
 
@@ -417,6 +452,64 @@ export default function AdminPage() {
           </button>
         </div>
       </form>
+
+      <hr className="tw-my-6" />
+
+      {/* ── Delete Evaluation Task ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Delete Evaluation Task
+      </h2>
+      <p className="tw-mb-4 tw-text-sm tw-text-gray-600">
+        Permanently remove a single source segment from an evaluation for all annotators. Also removes the source segment record itself.
+      </p>
+      <div className="form-group tw-mb-4">
+        <label className="form-control-label tw-font-semibold" htmlFor="delete_task_eval">
+          Evaluation
+        </label>
+        <select
+          className="form-control form-control-lg tw-mt-1"
+          id="delete_task_eval"
+          value={deleteTaskEvalId}
+          onChange={(e) => handleLoadBitexts(e.target.value)}
+        >
+          <option value="">— select —</option>
+          {evaluations.map((ev) => (
+            <option key={ev.id} value={ev.id}>{ev.name}</option>
+          ))}
+        </select>
+      </div>
+      {isLoadingBitexts && <p className="tw-text-sm tw-text-gray-500">Loading tasks…</p>}
+      {deleteTaskBitexts && deleteTaskBitexts.length === 0 && (
+        <p className="tw-text-sm tw-text-gray-500 tw-mb-10">No tasks found for this evaluation.</p>
+      )}
+      {deleteTaskBitexts && deleteTaskBitexts.length > 0 && (
+        <table className="table tw-mb-10 tw-text-sm">
+          <thead>
+            <tr>
+              <th className="tw-w-10">#</th>
+              <th>Source</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {deleteTaskBitexts.map((row) => (
+              <tr key={row.bitext_id}>
+                <td className="tw-text-gray-500">{row.task_number}</td>
+                <td className="tw-whitespace-pre-wrap">{row.source}</td>
+                <td className="tw-whitespace-nowrap">
+                  <button
+                    className="btn btn-sm btn-outline-danger"
+                    disabled={deletingBitextId === row.bitext_id}
+                    onClick={() => handleDeleteTask(row.bitext_id)}
+                  >
+                    {deletingBitextId === row.bitext_id ? "Deleting…" : "Delete"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <hr className="tw-my-6" />
 

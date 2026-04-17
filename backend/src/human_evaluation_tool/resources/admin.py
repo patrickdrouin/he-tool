@@ -38,6 +38,7 @@ from ..models import (
     System,
     User,
 )
+from sqlalchemy import func
 
 
 bp = Blueprint("admin", __name__)
@@ -310,6 +311,95 @@ def unassign_evaluation() -> ResponseReturnValue:
         return jsonify({
             "message": f"Removed {n} tasks of '{evaluation.name}' from '{user.email}'",
         }), 200
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
+
+
+@bp.get("/api/admin/evaluations/<int:evaluation_id>/bitexts")
+@jwt_required()
+def list_evaluation_bitexts(evaluation_id: int) -> ResponseReturnValue:
+    """Return all source segments (bitexts) for an evaluation."""
+
+    evaluation = db.session.get(Evaluation, evaluation_id)
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    # Collect distinct bitext IDs referenced by this evaluation's annotations
+    rows = (
+        db.session.execute(
+            select(Annotation.bitextId)
+            .filter_by(evaluationId=evaluation_id)
+            .distinct()
+        )
+        .scalars()
+        .all()
+    )
+
+    result = []
+    for i, bitext_id in enumerate(sorted(rows)):
+        bitext = db.session.get(Bitext, bitext_id)
+        if bitext:
+            result.append({
+                "bitext_id": bitext_id,
+                "task_number": i + 1,
+                "source": bitext.source,
+            })
+
+    return jsonify(result), 200
+
+
+@bp.delete("/api/admin/task")
+@jwt_required()
+def delete_evaluation_task() -> ResponseReturnValue:
+    """Delete a single source segment from an evaluation for all users.
+
+    Deletes all annotations (and their markings) for the given bitext
+    across every annotator, then deletes the bitext itself. If the
+    parent document has no remaining bitexts it is also deleted.
+
+    Request body: { "evaluation_id": 3, "bitext_id": 17 }
+    """
+
+    data = request.get_json(silent=True) or {}
+    missing = [f for f in ("evaluation_id", "bitext_id") if f not in data]
+    if missing:
+        return {"message": f"Missing required fields: {', '.join(missing)}"}, 422
+
+    evaluation = db.session.get(Evaluation, int(data["evaluation_id"]))
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    bitext = db.session.get(Bitext, int(data["bitext_id"]))
+    if bitext is None:
+        return {"message": "Task not found"}, 404
+
+    # Verify this bitext actually belongs to the evaluation
+    belongs = db.session.execute(
+        select(Annotation).filter_by(
+            evaluationId=evaluation.id, bitextId=bitext.id
+        ).limit(1)
+    ).scalar_one_or_none()
+    if belongs is None:
+        return {"message": "Task does not belong to this evaluation"}, 404
+
+    try:
+        document_id = bitext.documentId
+        # Cascade deletes all annotations + markings for this bitext
+        db.session.delete(bitext)
+        db.session.flush()
+
+        # Delete the document if it has no remaining bitexts
+        remaining = db.session.execute(
+            select(func.count()).select_from(Bitext).filter_by(documentId=document_id)
+        ).scalar()
+        if remaining == 0:
+            document = db.session.get(Document, document_id)
+            if document:
+                db.session.delete(document)
+
+        db.session.commit()
+        return jsonify({"message": "Task deleted"}), 200
     except SQLAlchemyError as exc:
         db.session.rollback()
         return {"message": str(exc)}, 500

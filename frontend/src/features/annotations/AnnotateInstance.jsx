@@ -26,10 +26,7 @@ import { toast } from "react-hot-toast";
 import Marking from "../../components/Marking";
 import Spinner from "../../components/Spinner";
 import SpinnerMini from "../../components/SpinnerMini";
-import {
-  deleteAnnotation as deleteAnnotationApi,
-  updateAnnotation as updateAnnotationApi,
-} from "../../services/apiAnnotations";
+import { updateAnnotation as updateAnnotationApi } from "../../services/apiAnnotations";
 import { useAnnotationMarkings } from "./useAnnotationMarkings";
 import { useAnnotationSystems } from "./useAnnotationSystems";
 import { useDocumentBitexts } from "./useDocumentBitexts";
@@ -85,22 +82,6 @@ export default function AnnotateInstance({
         queryClient.invalidateQueries({ queryKey: ["annotations"] });
       },
     });
-
-  const { mutate: deleteAnnotation, isLoading: isAnnotationDeleting } =
-    useMutation({
-      mutationFn: () => deleteAnnotationApi({ id: annotation["id"] }),
-      onError: (error) => {
-        toast.error(`Failed to delete task: ${error}. Please check your connection and try again.`);
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ["annotations"] });
-      },
-    });
-
-  function handleDelete() {
-    if (!window.confirm("Delete this task and all its markings? This cannot be undone.")) return;
-    deleteAnnotation();
-  }
 
   function handleFinish() {
     setConfirmingFinish(false);
@@ -204,17 +185,6 @@ export default function AnnotateInstance({
                 </div>
               </div>
             ) : null}
-
-            {/* ── Delete task ── */}
-            <div className="tw-mt-4 tw-mb-2 tw-w-full tw-text-right">
-              <button
-                className="btn btn-sm btn-outline-danger"
-                disabled={isAnnotationDeleting || isAnnotationUpdating}
-                onClick={handleDelete}
-              >
-                {isAnnotationDeleting ? "Deleting…" : "Delete this task"}
-              </button>
-            </div>
 
             {/* ── Finish / Unlock button ── */}
             <div className="tw-mt-6 tw-mb-4 tw-w-full">
