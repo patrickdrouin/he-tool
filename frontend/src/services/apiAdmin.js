@@ -19,6 +19,25 @@ export async function assignEvaluation({ evaluationId, userEmail }) {
   return data;
 }
 
+export async function unassignEvaluation({ evaluationId, userEmail }) {
+  const response = await fetch("/api/admin/assign", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ evaluation_id: evaluationId, user_email: userEmail }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Unassign failed: ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function importEvaluation({ evaluation, system, users, pairs }) {
   const response = await fetch("/api/admin/import", {
     method: "POST",

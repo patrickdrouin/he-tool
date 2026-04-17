@@ -59,6 +59,7 @@ class AnnotationSystem(Base):
             "id": self.id,
             "annotationId": self.annotationId,
             "systemId": self.systemId,
+            "systemName": self.system.name if self.system else None,
             "translation": self.translation,
             "createdAt": self.createdAt,
             "updatedAt": self.updatedAt,

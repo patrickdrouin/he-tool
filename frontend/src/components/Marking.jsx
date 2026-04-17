@@ -25,6 +25,7 @@ export default function Marking({
   containerRef,
   annotationId,
   systemId,
+  systemName,
   systemIndex,
   annotationMarkings,
   readOnly,
@@ -46,7 +47,7 @@ export default function Marking({
         />
       </div>
       <div className="row">
-        <div className="col-sm-2 markingHead">System {systemIndex + 1}</div>
+        <div className="col-sm-2 markingHead">{systemName || `System ${systemIndex + 1}`}</div>
         <MarkingItem
           containerRef={containerRef}
           annotationId={annotationId}

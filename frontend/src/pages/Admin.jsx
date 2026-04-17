@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
 import LanguageSelector from "../components/LanguageSelector";
-import { assignEvaluation, importEvaluation } from "../services/apiAdmin";
+import { assignEvaluation, unassignEvaluation, importEvaluation } from "../services/apiAdmin";
 import { register } from "../services/apiAuth";
 import { deleteUser, setUserAdmin } from "../services/apiUsers";
 import { useUsers } from "../features/admin/useUsers";
@@ -132,6 +132,35 @@ export default function AdminPage() {
       toast.error(err.message);
     } finally {
       setIsAssigning(false);
+    }
+  }
+
+  // — Unassign evaluation state —
+  const [unassignEvalId, setUnassignEvalId] = useState("");
+  const [unassignUserEmail, setUnassignUserEmail] = useState("");
+  const [isUnassigning, setIsUnassigning] = useState(false);
+
+  async function handleUnassign(e) {
+    e.preventDefault();
+    if (!unassignEvalId) { toast.error("Select an evaluation."); return; }
+    if (!unassignUserEmail) { toast.error("Select a user."); return; }
+    const evalName = evaluations.find((ev) => String(ev.id) === unassignEvalId)?.name ?? "";
+    if (!window.confirm(`Remove all tasks of "${evalName}" from ${unassignUserEmail}? This will also delete all their markings and cannot be undone.`)) return;
+
+    setIsUnassigning(true);
+    try {
+      const result = await unassignEvaluation({
+        evaluationId: Number(unassignEvalId),
+        userEmail: unassignUserEmail,
+      });
+      toast.success(result.message);
+      setUnassignEvalId("");
+      setUnassignUserEmail("");
+      queryClient.invalidateQueries({ queryKey: ["annotations"] });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsUnassigning(false);
     }
   }
 
@@ -332,6 +361,59 @@ export default function AdminPage() {
           </div>
           <button className="btn btn-primary tw-mb-1" disabled={isAssigning} type="submit">
             {isAssigning ? "Assigning…" : "Assign"}
+          </button>
+        </div>
+      </form>
+
+      <hr className="tw-my-6" />
+
+      {/* ── Unassign Evaluation ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Delete Annotation Tasks
+      </h2>
+      <p className="tw-mb-4 tw-text-sm tw-text-gray-600">
+        Remove all of a user&apos;s annotation tasks (and their markings) for a given evaluation. This cannot be undone.
+      </p>
+      <form onSubmit={handleUnassign} className="tw-mb-10">
+        <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="unassign_eval">
+              Evaluation
+            </label>
+            <select
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isUnassigning}
+              id="unassign_eval"
+              value={unassignEvalId}
+              onChange={(e) => setUnassignEvalId(e.target.value)}
+              required
+            >
+              <option value="">— select —</option>
+              {evaluations.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="unassign_user">
+              User
+            </label>
+            <select
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isUnassigning}
+              id="unassign_user"
+              value={unassignUserEmail}
+              onChange={(e) => setUnassignUserEmail(e.target.value)}
+              required
+            >
+              <option value="">— select —</option>
+              {users.map((u) => (
+                <option key={u.email} value={u.email}>{u.email}</option>
+              ))}
+            </select>
+          </div>
+          <button className="btn btn-danger tw-mb-1" disabled={isUnassigning} type="submit">
+            {isUnassigning ? "Deleting…" : "Delete tasks"}
           </button>
         </div>
       </form>

@@ -39,7 +39,7 @@ export default function AnnotateInstance({
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const isAnnotated = annotation["isAnnotated"];
-  const isLastSegment = !isAnnotated && done === total - 1;
+  const isLastTask = !isAnnotated && done === total - 1;
 
   useEffect(() => {
     setConfirmingFinish(false);
@@ -127,6 +127,7 @@ export default function AnnotateInstance({
                     containerRef={containerRef}
                     annotationId={annotation["id"]}
                     systemId={system["systemId"]}
+                    systemName={system["systemName"]}
                     systemIndex={systemIndex}
                     annotationMarkings={annotationMarkings.filter(
                       (m) => m["systemId"] === system["systemId"],
@@ -182,7 +183,7 @@ export default function AnnotateInstance({
             <div className="tw-mt-6 tw-mb-4 tw-w-full">
               {isAnnotated ? (
                 <div className="alert alert-success tw-flex tw-items-center tw-justify-between tw-mb-0">
-                  <span className="tw-font-semibold">&#10003; Segment marked as done</span>
+                  <span className="tw-font-semibold">&#10003; Task marked as done</span>
                   <button
                     className="btn btn-sm btn-outline-secondary"
                     disabled={isAnnotationUpdating}
@@ -193,9 +194,9 @@ export default function AnnotateInstance({
                 </div>
               ) : (
                 <>
-                  {isLastSegment && !confirmingFinish && (
+                  {isLastTask && !confirmingFinish && (
                     <div className="alert alert-info tw-mb-3 tw-text-sm">
-                      This is your last unannotated segment.
+                      This is your last unannotated task.
                     </div>
                   )}
                   {!confirmingFinish ? (
@@ -207,13 +208,13 @@ export default function AnnotateInstance({
                       {isAnnotationUpdating ? (
                         <div className="tw-flex tw-justify-center"><SpinnerMini /></div>
                       ) : (
-                        "Finish"
+                        "Mark task as done"
                       )}
                     </button>
                   ) : (
                     <div className="alert alert-warning tw-flex tw-flex-col tw-gap-3">
                       <p className="tw-mb-0 tw-font-semibold">
-                        Have you annotated all errors in this segment?
+                        Have you annotated all errors in this task?
                       </p>
                       <div className="tw-flex tw-gap-3">
                         <button

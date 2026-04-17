@@ -34,6 +34,7 @@ from ..models import (
     Bitext,
     Document,
     Evaluation,
+    Marking,
     System,
     User,
 )
@@ -256,6 +257,59 @@ def assign_evaluation() -> ResponseReturnValue:
             "message": f"Assigned {n} segments of '{evaluation.name}' to '{user.email}'",
         }), 201
 
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
+
+
+@bp.delete("/api/admin/assign")
+@jwt_required()
+def unassign_evaluation() -> ResponseReturnValue:
+    """Remove a user's assignment from an evaluation.
+
+    Request body:
+    {
+        "evaluation_id": 3,
+        "user_email": "alice@example.com"
+    }
+
+    Deletes all annotations (and their markings) for the given user+evaluation.
+    """
+
+    data = request.get_json(silent=True) or {}
+    missing = [f for f in ("evaluation_id", "user_email") if f not in data]
+    if missing:
+        return {"message": f"Missing required fields: {', '.join(missing)}"}, 422
+
+    evaluation = db.session.get(Evaluation, int(data["evaluation_id"]))
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    user = db.session.execute(
+        select(User).filter_by(email=data["user_email"])
+    ).scalar_one_or_none()
+    if user is None:
+        return {"message": f"No user with email '{data['user_email']}'"}, 404
+
+    annotations = (
+        db.session.execute(
+            select(Annotation).filter_by(evaluationId=evaluation.id, userId=user.id)
+        )
+        .scalars()
+        .all()
+    )
+
+    if not annotations:
+        return {"message": f"User '{data['user_email']}' has no tasks in this evaluation"}, 404
+
+    try:
+        n = len(annotations)
+        for annotation in annotations:
+            db.session.delete(annotation)
+        db.session.commit()
+        return jsonify({
+            "message": f"Removed {n} tasks of '{evaluation.name}' from '{user.email}'",
+        }), 200
     except SQLAlchemyError as exc:
         db.session.rollback()
         return {"message": str(exc)}, 500
