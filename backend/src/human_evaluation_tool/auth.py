@@ -161,6 +161,38 @@ def me() -> ResponseReturnValue:
     return jsonify(user.to_dict()), 200
 
 
+@bp.post("/api/auth/change-password")
+@_typed_jwt_required()
+def change_password() -> ResponseReturnValue:
+    """Change the current user's password."""
+
+    from sqlalchemy.exc import SQLAlchemyError
+
+    data = request.get_json(silent=True) or {}
+    if "current_password" not in data or "new_password" not in data:
+        return {"message": "Missing required fields"}, 422
+
+    identity = get_jwt_identity()
+    user = db.session.get(User, int(identity))
+    if user is None:
+        return {"message": "User not found"}, 404
+
+    if not bcrypt.check_password_hash(pw_hash=user.password, password=data["current_password"]):
+        return {"message": "Current password is incorrect"}, 401
+
+    if len(data["new_password"]) < 8:
+        return {"message": "New password must be at least 8 characters"}, 422
+
+    try:
+        user.password = bcrypt.generate_password_hash(data["new_password"]).decode("utf-8")
+        user.updatedAt = datetime.now()
+        db.session.commit()
+        return jsonify({"message": "Password updated successfully"}), 200
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
+
+
 def register_auth_blueprint(app: Flask) -> None:
     """Attach the authentication blueprint to the Flask app."""
 

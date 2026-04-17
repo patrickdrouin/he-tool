@@ -93,6 +93,11 @@ export default function NavigationBar() {
                     </>
                   )}
                   <div className="navbar-nav">
+                    <Link className="nav-item nav-link" to="/profile">
+                      Account
+                    </Link>
+                  </div>
+                  <div className="navbar-nav">
                     <button
                       className="nav-item nav-link"
                       disabled={isLogoutLoading}

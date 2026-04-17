@@ -40,6 +40,7 @@ import EvaluationDetailPage from "./pages/EvaluationDetail";
 import EvaluationsPage from "./pages/Evaluations";
 import LoginPage from "./pages/Login";
 import NotFoundPage from "./pages/NotFound";
+import ProfilePage from "./pages/Profile";
 import RegisterPage from "./pages/Register";
 import ResultsPage from "./pages/Results";
 
@@ -71,6 +72,7 @@ export default function App() {
           >
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/results" element={<AdminRoute><ResultsPage /></AdminRoute>} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/annotate" element={<AnnotatePage />} />
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluations/:id" element={<EvaluationDetailPage />} />

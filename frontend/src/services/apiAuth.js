@@ -77,6 +77,22 @@ export async function validate() {
   return true;
 }
 
+export async function changePassword({ currentPassword, newPassword }) {
+  const response = await fetch("/api/auth/change-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Failed: ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function getMe() {
   const response = await fetch("/api/auth/me", {
     method: "GET",
