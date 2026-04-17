@@ -54,6 +54,8 @@ export default function MarkingPopup({
   const [category, setCategory] = useState("000");
   const [severity, setSeverity] = useState("no-error");
   const [comment, setComment] = useState("");
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
 
   useEffect(() => {
     if (marking) {
@@ -64,6 +66,15 @@ export default function MarkingPopup({
       setCategory("000");
       setSeverity("no-error");
       setComment("");
+      // Capture start/end immediately — the live Selection object is cleared
+      // as soon as the user clicks into the comment textarea.
+      if (selection && !selection.isCollapsed) {
+        let start = parseInt(selection.anchorNode.parentElement.id);
+        let end = parseInt(selection.focusNode.parentElement.id);
+        if (start > end) [start, end] = [end, start];
+        setSelectionStart(start);
+        setSelectionEnd(end);
+      }
     }
   }, [marking, selection]);
 
@@ -123,15 +134,9 @@ export default function MarkingPopup({
             <button
               className="btn btn-primary"
               onClick={() => {
-                let start = parseInt(selection.anchorNode.parentElement.id);
-                let end = parseInt(selection.focusNode.parentElement.id);
-                if (start > end) {
-                  [start, end] = [end, start];
-                }
-
                 createMarking({
-                  start,
-                  end,
+                  start: selectionStart,
+                  end: selectionEnd,
                   category,
                   severity,
                   comment,
