@@ -55,7 +55,7 @@ export default function AnnotatePage() {
     return (
       <div className="container">
         <div className="tw-flex tw-flex-col tw-items-center tw-mt-12">
-          <h1 className="tw-mb-4 tw-text-3xl tw-font-bold">No segments assigned</h1>
+          <h1 className="tw-mb-4 tw-text-3xl tw-font-bold">No tasks assigned</h1>
           <p className="tw-text-lg">Ask your admin to assign an evaluation to you.</p>
         </div>
       </div>
@@ -67,37 +67,48 @@ export default function AnnotatePage() {
       <div className="row">
         <div className="col-12">
           <div id="annotation" className="row">
-            <div className="tw-mb-4 tw-flex tw-justify-between tw-items-center">
-              {currentAnnotation > 0 ? (
-                <button
-                  className="tw-text-blue-500 hover:tw-text-blue-600 hover:tw-underline"
-                  onClick={() =>
-                    setCurrentAnnotation(clamp(currentAnnotation - 1, 0, total - 1))
-                  }
-                >
-                  &larr; Previous
-                </button>
-              ) : (
-                <div />
-              )}
+            {/* ── Navigation bar ── */}
+            <div className="tw-mb-3 tw-flex tw-justify-between tw-items-center">
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                disabled={currentAnnotation === 0}
+                onClick={() => setCurrentAnnotation(clamp(currentAnnotation - 1, 0, total - 1))}
+              >
+                &larr; Previous
+              </button>
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={() => setSideBySide((v) => !v)}
               >
                 {sideBySide ? "Stacked view" : "Side-by-side view"}
               </button>
-              {currentAnnotation < total - 1 ? (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                disabled={currentAnnotation >= total - 1}
+                onClick={() => setCurrentAnnotation(clamp(currentAnnotation + 1, 0, total - 1))}
+              >
+                Next &rarr;
+              </button>
+            </div>
+
+            {/* ── Task picker ── */}
+            <div className="tw-mb-4 tw-flex tw-flex-wrap tw-gap-1">
+              {sortedAnnotations.map((ann, idx) => (
                 <button
-                  className="tw-text-blue-500 hover:tw-text-blue-600 hover:tw-underline"
-                  onClick={() =>
-                    setCurrentAnnotation(clamp(currentAnnotation + 1, 0, total - 1))
-                  }
+                  key={ann.id}
+                  className={[
+                    "btn btn-sm",
+                    idx === currentAnnotation
+                      ? "btn-primary"
+                      : ann.isAnnotated
+                      ? "btn-success"
+                      : "btn-outline-secondary",
+                  ].join(" ")}
+                  onClick={() => setCurrentAnnotation(idx)}
                 >
-                  Next &rarr;
+                  {idx + 1}
                 </button>
-              ) : (
-                <div />
-              )}
+              ))}
             </div>
             <AnnotateInstance
               containerRef={containerRef}
