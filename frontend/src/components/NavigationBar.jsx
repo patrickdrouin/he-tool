@@ -69,6 +69,11 @@ export default function NavigationBar() {
                     </Link>
                   </div>
                   <div className="navbar-nav">
+                    <Link className="nav-item nav-link" to="/help">
+                      Help
+                    </Link>
+                  </div>
+                  <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/evaluations">
                       Evaluations
                     </Link>

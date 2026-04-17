@@ -34,6 +34,7 @@ import NavigationBar from "./components/NavigationBar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import AboutPage from "./pages/About";
+import HelpPage from "./pages/Help";
 import AdminPage from "./pages/Admin";
 import AnnotatePage from "./pages/Annotate";
 import EvaluationDetailPage from "./pages/EvaluationDetail";
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/results" element={<AdminRoute><ResultsPage /></AdminRoute>} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/help" element={<HelpPage />} />
             <Route path="/annotate" element={<AnnotatePage />} />
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/evaluations/:id" element={<EvaluationDetailPage />} />
