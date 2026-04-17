@@ -19,6 +19,8 @@
  * Written by Giovanni G. De Giacomo <giovanni@yaraku.com>, August 2023
  */
 
+import { getCookie } from "./utils";
+
 export async function register({ email, password, nativeLanguage }) {
   const response = await fetch("/api/auth/register", {
     method: "POST",
@@ -80,7 +82,10 @@ export async function validate() {
 export async function changePassword({ currentPassword, newPassword }) {
   const response = await fetch("/api/auth/change-password", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+    },
     credentials: "include",
     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });
