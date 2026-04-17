@@ -48,6 +48,7 @@ class Marking(Base):
     errorCategory: Mapped[str] = mapped_column(String(20), nullable=False)
     errorSeverity: Mapped[str] = mapped_column(String(20), nullable=False)
     isSource: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    comment: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updatedAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
@@ -66,6 +67,7 @@ class Marking(Base):
             "errorCategory": self.errorCategory,
             "errorSeverity": self.errorSeverity,
             "isSource": self.isSource,
+            "comment": self.comment,
             "createdAt": self.createdAt,
             "updatedAt": self.updatedAt,
         }

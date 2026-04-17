@@ -192,7 +192,7 @@ def read_evaluation_results(evaluation_id: int) -> ResponseReturnValue:
 
             row.append(CATEGORY_NAME[marking.errorCategory])
             row.append(SEVERITY_NAME[marking.errorSeverity])
-            row.append(annotation.comment or "")
+            row.append(marking.comment or "")
 
             results.append("\t".join(row) + "\n")
 

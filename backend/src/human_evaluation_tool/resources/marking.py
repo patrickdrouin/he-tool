@@ -125,6 +125,7 @@ def create_marking(annotation_id: int, system_id: int) -> ResponseReturnValue:
             errorCategory=data["errorCategory"],
             errorSeverity=data["errorSeverity"],
             isSource=bool(data["isSource"]),
+            comment=data.get("comment") or None,
             createdAt=now,
             updatedAt=now,
         )
@@ -196,6 +197,7 @@ def update_marking(
         marking.errorCategory = data["errorCategory"]
         marking.errorSeverity = data["errorSeverity"]
         marking.isSource = bool(data["isSource"])
+        marking.comment = data.get("comment") or None
         marking.updatedAt = _current_time()
         db.session.commit()
         return jsonify(marking.to_dict()), 200

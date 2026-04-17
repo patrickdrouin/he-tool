@@ -53,13 +53,17 @@ export default function MarkingPopup({
   const { x: parentX, y: parentY } = containerRef.getBoundingClientRect();
   const [category, setCategory] = useState("000");
   const [severity, setSeverity] = useState("no-error");
+  const [comment, setComment] = useState("");
+
   useEffect(() => {
     if (marking) {
       setCategory(marking.errorCategory);
       setSeverity(marking.errorSeverity);
+      setComment(marking.comment || "");
     } else {
       setCategory("000");
       setSeverity("no-error");
+      setComment("");
     }
   }, [marking, selection]);
 
@@ -82,6 +86,7 @@ export default function MarkingPopup({
                   marking,
                   category: e.target.value,
                   severity: marking.errorSeverity,
+                  comment,
                 });
               } else {
                 setCategory(e.target.value);
@@ -98,6 +103,7 @@ export default function MarkingPopup({
                   marking,
                   category: marking.errorCategory,
                   severity: e.target.value,
+                  comment,
                 });
               } else {
                 setSeverity(e.target.value);
@@ -128,6 +134,7 @@ export default function MarkingPopup({
                   end,
                   category,
                   severity,
+                  comment,
                 });
               }}
             >
@@ -135,6 +142,25 @@ export default function MarkingPopup({
             </button>
           )}
         </div>
+        <textarea
+          className="form-control tw-text-sm tw-mt-1"
+          disabled={marking ? !marking.id || disabled : disabled}
+          placeholder="Comment (optional)"
+          rows={2}
+          style={{ minWidth: "220px" }}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          onBlur={() => {
+            if (marking) {
+              updateMarking({
+                marking,
+                category: marking.errorCategory,
+                severity: marking.errorSeverity,
+                comment,
+              });
+            }
+          }}
+        />
       </div>
     </div>
   );

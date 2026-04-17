@@ -44,6 +44,7 @@ export async function createAnnotationMarking({
   category,
   severity,
   isSource,
+  comment,
 }) {
   const response = await fetch(
     `/api/annotations/${annotationId}/systems/${systemId}/markings`,
@@ -60,6 +61,7 @@ export async function createAnnotationMarking({
         errorCategory: category,
         errorSeverity: severity,
         isSource,
+        comment: comment || null,
       }),
     },
   );
@@ -82,6 +84,7 @@ export async function updateAnnotationMarking({
   category,
   severity,
   isSource,
+  comment,
 }) {
   const response = await fetch(
     `/api/annotations/${annotationId}/systems/${systemId}/markings/${markingId}`,
@@ -98,6 +101,7 @@ export async function updateAnnotationMarking({
         errorCategory: category,
         errorSeverity: severity,
         isSource,
+        comment: comment || null,
       }),
     },
   );

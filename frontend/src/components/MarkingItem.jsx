@@ -51,7 +51,7 @@ export default function MarkingItem({
   const { updateAnnotationMarking, isLoading: isUpdateMarkingLoading } =
     useUpdateAnnotationMarking();
 
-  function createMarking({ start, end, category, severity }) {
+  function createMarking({ start, end, category, severity, comment }) {
     setSelectedMarking(null);
     setSelection(null);
 
@@ -72,6 +72,7 @@ export default function MarkingItem({
       category,
       severity,
       isSource,
+      comment,
       onSuccess: (data) => {
         queryClient.setQueryData(
           ["annotationMarkings", annotationId],
@@ -117,7 +118,7 @@ export default function MarkingItem({
     });
   }
 
-  function updateMarking({ marking, category, severity }) {
+  function updateMarking({ marking, category, severity, comment }) {
     updateAnnotationMarking({
       annotationId,
       systemId,
@@ -127,6 +128,7 @@ export default function MarkingItem({
       category,
       severity,
       isSource,
+      comment,
       onSuccess: () => {
         queryClient.setQueryData(
           ["annotationMarkings", annotationId],
