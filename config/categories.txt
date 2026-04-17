@@ -14,41 +14,45 @@
 
 Accuracy
   A01: Mistranslation
-  A02: Positive/Negative
-  A03: Numbers
-  A04: Pronoun
-  A05: Proper Noun
-  A06: Omission
-  A07: Addition
-  A08: Untranslated
-  A09: Others
+  A02: Overtranslation
+  A03: Undertranslation
+  A04: Omission
+  A05: Addition
+  A06: Transposition
+  A07: Untranslated
+  A08: Gibberish
+  A09: Other
 
-Fluency
-  F01: Typography/Spelling
-  F02: Wrong Kanji
-  F03: Grammar
-  F04: Misuse
-  F05: Collocation
-  F06: Grammar Register
-  F07: Ambiguity
-  F08: Unintelligible
-  F09: Symbols
-  F10: Others
+Linguist conventions
+  L01: Grammar and syntax
+  L02: Punctuation
+  L03: Spelling
+  L04: Character
+  L05: Others
 
 Terminology
-  T01: Inconsistent with termbase
-  T02: Inconsistent with domain
+  T01: Inconsistent with terminology resources
+  T02: Wrong term
   T03: Inconsistent use
-  T04: Others
+  T04: Other
 
 Style
-  S01: Inconsistent with company style
+  S01: Textual conventions
   S02: Register
-  S03: Inconsistent style
-  S04: Others
+  S03: Lack of clarity
+  S04: Conciseness
+  S05: Unidiomatic
+  S06: Coherence and cohesion
+  S07: Inconsistent with external reference
+  S08: Others
 
 Locale
-  L01: Locale convention
+  LC1: Locale convention
+
+Audience appropriateness
+  P01: Culture-specific reference
+  P02: Offensive
+  P03: Other
 
 SourceError
   SE1: Source Error

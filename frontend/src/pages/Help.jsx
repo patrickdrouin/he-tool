@@ -127,32 +127,28 @@ export default function HelpPage() {
             <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Accuracy</h3>
             <table className="table tw-text-sm">
               <tbody>
-                <tr><td className="tw-text-gray-500">A01</td><td>Mistranslation — wrong meaning</td></tr>
-                <tr><td className="tw-text-gray-500">A02</td><td>Positive/Negative reversed</td></tr>
-                <tr><td className="tw-text-gray-500">A03</td><td>Numbers wrong</td></tr>
-                <tr><td className="tw-text-gray-500">A04</td><td>Pronoun wrong</td></tr>
-                <tr><td className="tw-text-gray-500">A05</td><td>Proper noun wrong</td></tr>
-                <tr><td className="tw-text-gray-500">A06</td><td>Omission — content missing</td></tr>
-                <tr><td className="tw-text-gray-500">A07</td><td>Addition — content added</td></tr>
-                <tr><td className="tw-text-gray-500">A08</td><td>Untranslated</td></tr>
-                <tr><td className="tw-text-gray-500">A09</td><td>Other accuracy error</td></tr>
+                <tr><td className="tw-text-gray-500">A01</td><td>Mistranslation</td></tr>
+                <tr><td className="tw-text-gray-500">A02</td><td>Overtranslation</td></tr>
+                <tr><td className="tw-text-gray-500">A03</td><td>Undertranslation</td></tr>
+                <tr><td className="tw-text-gray-500">A04</td><td>Omission</td></tr>
+                <tr><td className="tw-text-gray-500">A05</td><td>Addition</td></tr>
+                <tr><td className="tw-text-gray-500">A06</td><td>Transposition</td></tr>
+                <tr><td className="tw-text-gray-500">A07</td><td>Untranslated</td></tr>
+                <tr><td className="tw-text-gray-500">A08</td><td>Gibberish</td></tr>
+                <tr><td className="tw-text-gray-500">A09</td><td>Other</td></tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Fluency</h3>
+            <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Linguist conventions</h3>
             <table className="table tw-text-sm">
               <tbody>
-                <tr><td className="tw-text-gray-500">F01</td><td>Spelling / typography</td></tr>
-                <tr><td className="tw-text-gray-500">F03</td><td>Grammar</td></tr>
-                <tr><td className="tw-text-gray-500">F04</td><td>Misuse of word</td></tr>
-                <tr><td className="tw-text-gray-500">F05</td><td>Collocation</td></tr>
-                <tr><td className="tw-text-gray-500">F06</td><td>Register (formal/informal)</td></tr>
-                <tr><td className="tw-text-gray-500">F07</td><td>Ambiguity</td></tr>
-                <tr><td className="tw-text-gray-500">F08</td><td>Unintelligible</td></tr>
-                <tr><td className="tw-text-gray-500">F09</td><td>Symbols</td></tr>
-                <tr><td className="tw-text-gray-500">F10</td><td>Other fluency error</td></tr>
+                <tr><td className="tw-text-gray-500">L01</td><td>Grammar and syntax</td></tr>
+                <tr><td className="tw-text-gray-500">L02</td><td>Punctuation</td></tr>
+                <tr><td className="tw-text-gray-500">L03</td><td>Spelling</td></tr>
+                <tr><td className="tw-text-gray-500">L04</td><td>Character</td></tr>
+                <tr><td className="tw-text-gray-500">L05</td><td>Others</td></tr>
               </tbody>
             </table>
           </div>
@@ -161,23 +157,38 @@ export default function HelpPage() {
             <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Terminology</h3>
             <table className="table tw-text-sm">
               <tbody>
-                <tr><td className="tw-text-gray-500">T01</td><td>Inconsistent with termbase</td></tr>
-                <tr><td className="tw-text-gray-500">T02</td><td>Inconsistent with domain</td></tr>
-                <tr><td className="tw-text-gray-500">T03</td><td>Inconsistent use within text</td></tr>
-                <tr><td className="tw-text-gray-500">T04</td><td>Other terminology error</td></tr>
+                <tr><td className="tw-text-gray-500">T01</td><td>Inconsistent with terminology resources</td></tr>
+                <tr><td className="tw-text-gray-500">T02</td><td>Wrong term</td></tr>
+                <tr><td className="tw-text-gray-500">T03</td><td>Inconsistent use</td></tr>
+                <tr><td className="tw-text-gray-500">T04</td><td>Other</td></tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Style &amp; Locale</h3>
+            <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Style</h3>
             <table className="table tw-text-sm">
               <tbody>
-                <tr><td className="tw-text-gray-500">S01</td><td>Inconsistent with style guide</td></tr>
+                <tr><td className="tw-text-gray-500">S01</td><td>Textual conventions</td></tr>
                 <tr><td className="tw-text-gray-500">S02</td><td>Register</td></tr>
-                <tr><td className="tw-text-gray-500">S03</td><td>Inconsistent style</td></tr>
-                <tr><td className="tw-text-gray-500">S04</td><td>Other style error</td></tr>
-                <tr><td className="tw-text-gray-500">L01</td><td>Locale convention (dates, units…)</td></tr>
+                <tr><td className="tw-text-gray-500">S03</td><td>Lack of clarity</td></tr>
+                <tr><td className="tw-text-gray-500">S04</td><td>Conciseness</td></tr>
+                <tr><td className="tw-text-gray-500">S05</td><td>Unidiomatic</td></tr>
+                <tr><td className="tw-text-gray-500">S06</td><td>Coherence and cohesion</td></tr>
+                <tr><td className="tw-text-gray-500">S07</td><td>Inconsistent with external reference</td></tr>
+                <tr><td className="tw-text-gray-500">S08</td><td>Others</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <h3 className="tw-font-semibold tw-text-gray-700 tw-mb-2">Locale &amp; Audience</h3>
+            <table className="table tw-text-sm">
+              <tbody>
+                <tr><td className="tw-text-gray-500">LC1</td><td>Locale convention (dates, units…)</td></tr>
+                <tr><td className="tw-text-gray-500">P01</td><td>Culture-specific reference</td></tr>
+                <tr><td className="tw-text-gray-500">P02</td><td>Offensive</td></tr>
+                <tr><td className="tw-text-gray-500">P03</td><td>Other</td></tr>
                 <tr><td className="tw-text-gray-500">SE1</td><td>Source error (problem is in the source)</td></tr>
               </tbody>
             </table>

@@ -37,93 +37,101 @@ export default function ErrorCategorySelector(props) {
           Mistranslation
         </option>
         <option id="A02" value="A02">
-          Positive/Negative
+          Overtranslation
         </option>
         <option id="A03" value="A03">
-          Numbers
+          Undertranslation
         </option>
         <option id="A04" value="A04">
-          Pronoun
-        </option>
-        <option id="A05" value="A05">
-          Proper Noun
-        </option>
-        <option id="A06" value="A06">
           Omission
         </option>
-        <option id="A07" value="A07">
+        <option id="A05" value="A05">
           Addition
         </option>
-        <option id="A08" value="A08">
+        <option id="A06" value="A06">
+          Transposition
+        </option>
+        <option id="A07" value="A07">
           Untranslated
         </option>
+        <option id="A08" value="A08">
+          Gibberish
+        </option>
         <option id="A09" value="A09">
-          Others
+          Other
         </option>
       </optgroup>
-      <optgroup label="Fluency">
-        <option id="F01" value="F01">
-          Typography/Spelling
+      <optgroup label="Linguist conventions">
+        <option id="L01" value="L01">
+          Grammar and syntax
         </option>
-        <option id="F02" value="F02">
-          Wrong Kanji
+        <option id="L02" value="L02">
+          Punctuation
         </option>
-        <option id="F03" value="F03">
-          Grammar
+        <option id="L03" value="L03">
+          Spelling
         </option>
-        <option id="F04" value="F04">
-          Misuse
+        <option id="L04" value="L04">
+          Character
         </option>
-        <option id="F05" value="F05">
-          Collocation
-        </option>
-        <option id="F06" value="F06">
-          Grammar Register
-        </option>
-        <option id="F07" value="F07">
-          Ambiguity
-        </option>
-        <option id="F08" value="F08">
-          Unintelligible
-        </option>
-        <option id="F09" value="F09">
-          Symbols
-        </option>
-        <option id="F10" value="F10">
+        <option id="L05" value="L05">
           Others
         </option>
       </optgroup>
       <optgroup label="Terminology">
         <option id="T01" value="T01">
-          Inconsistent with termbase
+          Inconsistent with terminology resources
         </option>
         <option id="T02" value="T02">
-          Inconsistent with domain
+          Wrong term
         </option>
         <option id="T03" value="T03">
           Inconsistent use
         </option>
         <option id="T04" value="T04">
-          Others
+          Other
         </option>
       </optgroup>
       <optgroup label="Style">
         <option id="S01" value="S01">
-          Inconsistent with company style
+          Textual conventions
         </option>
         <option id="S02" value="S02">
           Register
         </option>
         <option id="S03" value="S03">
-          Inconsistent style
+          Lack of clarity
         </option>
         <option id="S04" value="S04">
+          Conciseness
+        </option>
+        <option id="S05" value="S05">
+          Unidiomatic
+        </option>
+        <option id="S06" value="S06">
+          Coherence and cohesion
+        </option>
+        <option id="S07" value="S07">
+          Inconsistent with external reference
+        </option>
+        <option id="S08" value="S08">
           Others
         </option>
       </optgroup>
       <optgroup label="Locale">
-        <option id="L01" value="L01">
+        <option id="LC1" value="LC1">
           Locale convention
+        </option>
+      </optgroup>
+      <optgroup label="Audience appropriateness">
+        <option id="P01" value="P01">
+          Culture-specific reference
+        </option>
+        <option id="P02" value="P02">
+          Offensive
+        </option>
+        <option id="P03" value="P03">
+          Other
         </option>
       </optgroup>
       <optgroup label="SourceError">
