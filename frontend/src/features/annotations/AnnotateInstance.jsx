@@ -139,14 +139,6 @@ export default function AnnotateInstance({
                 </div>
               );
             })}
-            <div className="card tw-mb-4">
-              <div className="card-header">Reference</div>
-              <div className="card-body">
-                <p className="tw-whitespace-pre-wrap">
-                  {annotation["bitext"]["target"]}
-                </p>
-              </div>
-            </div>
             {documentBitexts.length > 1 ? (
               <div className="card">
                 <div className="card-header">Document Context</div>
