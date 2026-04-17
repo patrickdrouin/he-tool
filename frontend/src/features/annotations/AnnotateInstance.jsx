@@ -37,8 +37,10 @@ import { useDocumentBitexts } from "./useDocumentBitexts";
 export default function AnnotateInstance({
   containerRef,
   annotation,
+  currentIndex,
   done,
   total,
+  sideBySide,
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const isAnnotated = annotation["isAnnotated"];
@@ -120,12 +122,12 @@ export default function AnnotateInstance({
     <div className="container">
       <div className="tw-mb-6 tw-flex tw-justify-between">
         <div>
-          <b>Evaluation Name:</b>&nbsp;
+          <b>Evaluation:</b>&nbsp;
           {annotation["evaluation"]["name"]}
         </div>
-        <div className="tw-justify-between tw-space-x-8">
+        <div className="tw-space-x-6">
+          <b>Task:</b>&nbsp;{currentIndex + 1}&nbsp;/&nbsp;{total}
           <b>Done:</b>&nbsp;{done}
-          <b>Total:</b>&nbsp;{total}
         </div>
       </div>
       <div className="row">
@@ -152,6 +154,7 @@ export default function AnnotateInstance({
                       (m) => m["systemId"] === system["systemId"],
                     )}
                     readOnly={isAnnotated}
+                    sideBySide={sideBySide}
                     source={annotation["bitext"]["source"]}
                     target={system["translation"]}
                   />

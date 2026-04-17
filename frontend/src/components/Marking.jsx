@@ -29,9 +29,45 @@ export default function Marking({
   systemIndex,
   annotationMarkings,
   readOnly,
+  sideBySide,
   source,
   target,
 }) {
+  const label = systemName || `System ${systemIndex + 1}`;
+
+  if (sideBySide) {
+    return (
+      <div id="markingParent" className="container-fluid" tabIndex="0">
+        <div className="row">
+          <div className="col-6">
+            <div className="markingHead tw-mb-1">Source</div>
+            <MarkingItem
+              containerRef={containerRef}
+              annotationId={annotationId}
+              systemId={systemId}
+              annotationMarkings={annotationMarkings.filter((m) => m["isSource"])}
+              isSource={true}
+              readOnly={true}
+              text={source}
+            />
+          </div>
+          <div className="col-6">
+            <div className="markingHead tw-mb-1">{label}</div>
+            <MarkingItem
+              containerRef={containerRef}
+              annotationId={annotationId}
+              systemId={systemId}
+              annotationMarkings={annotationMarkings.filter((m) => !m["isSource"])}
+              isSource={false}
+              readOnly={readOnly}
+              text={target}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id="markingParent" className="container-fluid" tabIndex="0">
       <div className="row">
@@ -47,7 +83,7 @@ export default function Marking({
         />
       </div>
       <div className="row">
-        <div className="col-sm-2 markingHead">{systemName || `System ${systemIndex + 1}`}</div>
+        <div className="col-sm-2 markingHead">{label}</div>
         <MarkingItem
           containerRef={containerRef}
           annotationId={annotationId}

@@ -143,7 +143,7 @@ export default function MarkingPopup({
                 });
               }}
             >
-              +
+              OK
             </button>
           )}
         </div>

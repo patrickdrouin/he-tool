@@ -30,6 +30,7 @@ import { clamp } from "../services/utils";
 export default function AnnotatePage() {
   const containerRef = useRef(null);
   const [currentAnnotation, setCurrentAnnotation] = useState(0);
+  const [sideBySide, setSideBySide] = useState(false);
   const [searchParams] = useSearchParams();
   const evaluationId = searchParams.get("evaluation")
     ? parseInt(searchParams.get("evaluation"), 10)
@@ -66,7 +67,7 @@ export default function AnnotatePage() {
       <div className="row">
         <div className="col-12">
           <div id="annotation" className="row">
-            <div className="tw-mb-4 tw-flex tw-justify-between">
+            <div className="tw-mb-4 tw-flex tw-justify-between tw-items-center">
               {currentAnnotation > 0 ? (
                 <button
                   className="tw-text-blue-500 hover:tw-text-blue-600 hover:tw-underline"
@@ -79,6 +80,12 @@ export default function AnnotatePage() {
               ) : (
                 <div />
               )}
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => setSideBySide((v) => !v)}
+              >
+                {sideBySide ? "Stacked view" : "Side-by-side view"}
+              </button>
               {currentAnnotation < total - 1 ? (
                 <button
                   className="tw-text-blue-500 hover:tw-text-blue-600 hover:tw-underline"
@@ -95,8 +102,10 @@ export default function AnnotatePage() {
             <AnnotateInstance
               containerRef={containerRef}
               annotation={sortedAnnotations[clamp(currentAnnotation, 0, total - 1)]}
+              currentIndex={clamp(currentAnnotation, 0, total - 1)}
               done={done}
               total={total}
+              sideBySide={sideBySide}
             />
           </div>
         </div>
