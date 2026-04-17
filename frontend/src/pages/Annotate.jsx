@@ -91,25 +91,6 @@ export default function AnnotatePage() {
               </button>
             </div>
 
-            {/* ── Task picker ── */}
-            <div className="tw-mb-4 tw-flex tw-flex-wrap tw-gap-1">
-              {sortedAnnotations.map((ann, idx) => (
-                <button
-                  key={ann.id}
-                  className={[
-                    "btn btn-sm",
-                    idx === currentAnnotation
-                      ? "btn-primary"
-                      : ann.isAnnotated
-                      ? "btn-success"
-                      : "btn-outline-secondary",
-                  ].join(" ")}
-                  onClick={() => setCurrentAnnotation(idx)}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-            </div>
             <AnnotateInstance
               containerRef={containerRef}
               annotation={sortedAnnotations[clamp(currentAnnotation, 0, total - 1)]}
@@ -117,6 +98,10 @@ export default function AnnotatePage() {
               done={done}
               total={total}
               sideBySide={sideBySide}
+              onNavigateToBitext={(bitextId) => {
+                const idx = sortedAnnotations.findIndex((a) => a["bitext"]["id"] === bitextId);
+                if (idx !== -1) setCurrentAnnotation(idx);
+              }}
             />
           </div>
         </div>

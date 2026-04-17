@@ -41,6 +41,7 @@ export default function AnnotateInstance({
   done,
   total,
   sideBySide,
+  onNavigateToBitext,
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const isAnnotated = annotation["isAnnotated"];
@@ -167,14 +168,28 @@ export default function AnnotateInstance({
                 <div className="card-header">Document Context</div>
                 <div className="card-body">
                   <table className="table">
-                    <tr>
-                      <th>Source</th>
-                      <th>Target</th>
-                    </tr>
-                    {documentBitexts.map((bitext) => {
-                      if (bitext["id"] === annotation["bitext"]["id"]) {
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Source</th>
+                        <th>Translation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {documentBitexts.map((bitext, rowIndex) => {
+                        const isActive = bitext["id"] === annotation["bitext"]["id"];
                         return (
-                          <tr className="tw-border-b tw-border-t tw-border-solid tw-bg-green-100">
+                          <tr
+                            key={bitext["id"]}
+                            className={[
+                              "tw-border-b tw-border-t tw-border-solid tw-cursor-pointer",
+                              isActive ? "tw-bg-green-100" : "hover:tw-bg-gray-50",
+                            ].join(" ")}
+                            onClick={() => onNavigateToBitext && onNavigateToBitext(bitext["id"])}
+                          >
+                            <td className="tw-py-4 tw-pr-2 tw-text-gray-500 tw-text-sm tw-w-8">
+                              {rowIndex + 1}
+                            </td>
                             <td className="tw-whitespace-pre-wrap tw-py-4">
                               {bitext["source"]}
                             </td>
@@ -183,19 +198,8 @@ export default function AnnotateInstance({
                             </td>
                           </tr>
                         );
-                      }
-
-                      return (
-                        <tr className="tw-border-b tw-border-t tw-border-solid">
-                          <td className="tw-whitespace-pre-wrap tw-py-4">
-                            {bitext["source"]}
-                          </td>
-                          <td className="tw-whitespace-pre-wrap tw-py-4">
-                            {bitext["target"]}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                      })}
+                    </tbody>
                   </table>
                 </div>
               </div>
