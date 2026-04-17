@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
 import LanguageSelector from "../components/LanguageSelector";
+import AnnotatorProgress from "../components/AnnotatorProgress";
 import { assignEvaluation, unassignEvaluation, importEvaluation, getEvaluationBitexts, deleteEvaluationTask } from "../services/apiAdmin";
 import { register } from "../services/apiAuth";
 import { deleteUser, setUserAdmin } from "../services/apiUsers";
@@ -271,6 +272,14 @@ export default function AdminPage() {
 
   return (
     <div className="content-section">
+
+      {/* ── Annotator Progress ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Annotator Progress
+      </h2>
+      <AnnotatorProgress />
+
+      <hr className="tw-my-6" />
 
       {/* ── Create User ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">

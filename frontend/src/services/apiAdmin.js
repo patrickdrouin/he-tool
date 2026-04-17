@@ -38,6 +38,20 @@ export async function unassignEvaluation({ evaluationId, userEmail }) {
   return data;
 }
 
+export async function getProgress() {
+  const response = await fetch("/api/admin/progress", {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Failed to load progress: ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function getEvaluationBitexts({ evaluationId }) {
   const response = await fetch(`/api/admin/evaluations/${evaluationId}/bitexts`, {
     method: "GET",

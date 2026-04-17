@@ -24,7 +24,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_jwt_extended import jwt_required
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from .. import db
@@ -38,7 +38,6 @@ from ..models import (
     System,
     User,
 )
-from sqlalchemy import func
 
 
 bp = Blueprint("admin", __name__)
@@ -403,3 +402,84 @@ def delete_evaluation_task() -> ResponseReturnValue:
     except SQLAlchemyError as exc:
         db.session.rollback()
         return {"message": str(exc)}, 500
+
+
+@bp.get("/api/admin/progress")
+@jwt_required()
+def get_progress() -> ResponseReturnValue:
+    """Return annotation progress per user per evaluation.
+
+    Response shape:
+    [
+      {
+        "user_id": 1,
+        "email": "alice@example.com",
+        "total_tasks": 100,
+        "total_done": 45,
+        "total_in_progress": 12,
+        "evaluations": [
+          {
+            "evaluation_id": 1,
+            "evaluation_name": "EN-FR Study 1",
+            "total": 50,
+            "done": 23,
+            "in_progress": 8
+          }
+        ]
+      }
+    ]
+
+    "done"        = isAnnotated is True
+    "in_progress" = has at least one marking but isAnnotated is False
+    """
+
+    users = db.session.execute(select(User).order_by(User.email)).scalars().all()
+
+    # Pre-fetch all annotation IDs that have at least one marking (one query)
+    annotated_ids_with_markings: set[int] = set(
+        db.session.execute(
+            select(Marking.annotationId).distinct()
+        ).scalars().all()
+    )
+
+    result = []
+    for user in users:
+        annotations = (
+            db.session.execute(select(Annotation).filter_by(userId=user.id))
+            .scalars()
+            .all()
+        )
+
+        if not annotations:
+            continue
+
+        # Group by evaluation
+        eval_map: dict[int, dict] = {}
+        for ann in annotations:
+            eid = ann.evaluationId
+            if eid not in eval_map:
+                ev = db.session.get(Evaluation, eid)
+                eval_map[eid] = {
+                    "evaluation_id": eid,
+                    "evaluation_name": ev.name if ev else str(eid),
+                    "total": 0,
+                    "done": 0,
+                    "in_progress": 0,
+                }
+            eval_map[eid]["total"] += 1
+            if ann.isAnnotated:
+                eval_map[eid]["done"] += 1
+            elif ann.id in annotated_ids_with_markings:
+                eval_map[eid]["in_progress"] += 1
+
+        evaluations = sorted(eval_map.values(), key=lambda e: e["evaluation_name"])
+        result.append({
+            "user_id": user.id,
+            "email": user.email,
+            "total_tasks": sum(e["total"] for e in evaluations),
+            "total_done": sum(e["done"] for e in evaluations),
+            "total_in_progress": sum(e["in_progress"] for e in evaluations),
+            "evaluations": evaluations,
+        })
+
+    return jsonify(result), 200
