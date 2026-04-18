@@ -205,39 +205,41 @@ export default function MarkingItem({
   }
 
   function getContextMenuByIndex(index) {
-    const matches = getMarkingsAtIndex(index);
-
-    if (matches.length > 0) {
-      return (e) => {
-        e.preventDefault();
-        const indices = matches.map(({ i }) => i);
-        setOverlappingIndices(indices);
-        setSelectedMarking(indices[0]);
-        setMouseX(e.clientX);
-        setMouseY(e.clientY);
-      };
-    }
-
     return (e) => {
       e.preventDefault();
 
-      const selection = window.getSelection();
-      if (selection.isCollapsed) return;
+      const sel = window.getSelection();
+      const hasSelection = sel && !sel.isCollapsed;
 
-      let start = parseInt(selection.anchorNode.parentElement.id);
-      let end = parseInt(selection.focusNode.parentElement.id);
-      if (start > end) [start, end] = [end, start];
+      if (hasSelection) {
+        let start = parseInt(sel.anchorNode.parentElement.id);
+        let end = parseInt(sel.focusNode.parentElement.id);
+        if (start > end) [start, end] = [end, start];
 
-      if (isNaN(start) || isNaN(end)) {
-        toast.error("Selection is invalid. Please select carefully and try again.");
-        return;
+        // Only use the selection if the right-clicked word is actually inside it.
+        // This prevents a stale drag-selection from being used when the user just
+        // right-clicks a single word without selecting anything new.
+        if (!isNaN(start) && !isNaN(end) && index >= start && index <= end) {
+          setSelectedMarking(null);
+          setOverlappingIndices([]);
+          setSelection(sel);
+          setMouseX(e.clientX);
+          setMouseY(e.clientY);
+          return;
+        }
       }
 
-      setSelectedMarking(null);
-      setOverlappingIndices([]);
-      setSelection(selection);
-      setMouseX(e.clientX);
-      setMouseY(e.clientY);
+      // No valid selection covering this word — open edit popup if it's already marked.
+      const matches = getMarkingsAtIndex(index);
+      if (matches.length > 0) {
+        const indices = matches.map(({ i }) => i);
+        setOverlappingIndices(indices);
+        setSelectedMarking(indices[0]);
+        setSelection(null);
+        setMouseX(e.clientX);
+        setMouseY(e.clientY);
+      }
+      // No selection and no marking → do nothing.
     };
   }
 
