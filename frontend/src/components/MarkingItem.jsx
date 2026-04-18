@@ -41,7 +41,6 @@ export default function MarkingItem({
   text,
 }) {
   const [selectedMarking, setSelectedMarking] = useState(null);
-  const [overlappingIndices, setOverlappingIndices] = useState([]);
   const [selection, setSelection] = useState(null);
   const [mouseX, setMouseX] = useState(null);
   const [mouseY, setMouseY] = useState(null);
@@ -54,7 +53,6 @@ export default function MarkingItem({
 
   function createMarking({ start, end, category, severity, comment }) {
     setSelectedMarking(null);
-    setOverlappingIndices([]);
     setSelection(null);
 
     // Assert that neither start or end are NaN
@@ -96,7 +94,6 @@ export default function MarkingItem({
 
   function deleteMarking({ marking }) {
     setSelectedMarking(null);
-    setOverlappingIndices([]);
     setSelection(null);
     deleteAnnotationMarking({
       annotationId,
@@ -177,69 +174,63 @@ export default function MarkingItem({
     }
   }
 
-  const SEVERITY_ORDER = ["critical", "major", "minor", "not-judgeable", "no-error"];
-
-  function getMarkingsAtIndex(index) {
-    return annotationMarkings
-      .map((m, i) => ({ m, i }))
-      .filter(({ m }) => index >= m.errorStart && index <= m.errorEnd);
-  }
-
   function getClassByIndex(index) {
-    const matches = getMarkingsAtIndex(index);
-    if (matches.length === 0) return undefined;
-    matches.sort(
-      (a, b) =>
-        SEVERITY_ORDER.indexOf(a.m.errorSeverity) -
-        SEVERITY_ORDER.indexOf(b.m.errorSeverity),
-    );
-    const base = getClassBySeverity(matches[0].m.errorSeverity);
-    // Double underline indicates overlapping markings
-    return matches.length > 1 ? `${base} tw-underline tw-decoration-double` : base;
-  }
-
-  function cycleOverlap(dir) {
-    const pos = overlappingIndices.indexOf(selectedMarking);
-    const next = (pos + dir + overlappingIndices.length) % overlappingIndices.length;
-    setSelectedMarking(overlappingIndices[next]);
+    for (const marking of annotationMarkings) {
+      if (index >= marking.errorStart && index <= marking.errorEnd) {
+        return getClassBySeverity(marking.errorSeverity);
+      }
+    }
   }
 
   function getContextMenuByIndex(index) {
+    for (const [markingIndex, marking] of annotationMarkings.entries()) {
+      if (index >= marking.errorStart && index <= marking.errorEnd) {
+        return (e) => {
+          e.preventDefault();
+          setSelectedMarking(markingIndex);
+          setMouseX(e.clientX);
+          setMouseY(e.clientY);
+        };
+      }
+    }
+
     return (e) => {
       e.preventDefault();
 
-      const sel = window.getSelection();
-      const hasSelection = sel && !sel.isCollapsed;
+      const selection = window.getSelection();
+      if (selection.isCollapsed) {
+        return;
+      }
 
-      if (hasSelection) {
-        let start = parseInt(sel.anchorNode.parentElement.id);
-        let end = parseInt(sel.focusNode.parentElement.id);
-        if (start > end) [start, end] = [end, start];
+      let start = parseInt(selection.anchorNode.parentElement.id);
+      let end = parseInt(selection.focusNode.parentElement.id);
+      if (start > end) {
+        [start, end] = [end, start];
+      }
 
-        // Only use the selection if the right-clicked word is actually inside it.
-        // This prevents a stale drag-selection from being used when the user just
-        // right-clicks a single word without selecting anything new.
-        if (!isNaN(start) && !isNaN(end) && index >= start && index <= end) {
-          setSelectedMarking(null);
-          setOverlappingIndices([]);
-          setSelection(sel);
-          setMouseX(e.clientX);
-          setMouseY(e.clientY);
+      // Return early if selection is invalid
+      if (isNaN(start) || isNaN(end)) {
+        toast.error(
+          "Selection is invalid. Please select carefully and try again.",
+        );
+
+        return;
+      }
+
+      // Return early if marking overlaps with existing marking
+      for (const marking of annotationMarkings) {
+        if (
+          (marking.errorStart >= start && marking.errorStart <= end) ||
+          (marking.errorEnd >= start && marking.errorEnd <= end)
+        ) {
+          toast.error("Selection overlaps with existing marking.");
           return;
         }
       }
 
-      // No valid selection covering this word — open edit popup if it's already marked.
-      const matches = getMarkingsAtIndex(index);
-      if (matches.length > 0) {
-        const indices = matches.map(({ i }) => i);
-        setOverlappingIndices(indices);
-        setSelectedMarking(indices[0]);
-        setSelection(null);
-        setMouseX(e.clientX);
-        setMouseY(e.clientY);
-      }
-      // No selection and no marking → do nothing.
+      setSelection(selection);
+      setMouseX(e.clientX);
+      setMouseY(e.clientY);
     };
   }
 
@@ -249,22 +240,22 @@ export default function MarkingItem({
 
   return (
     <div className="col-sm-10 markingText tw-select-text tw-whitespace-pre-wrap" onContextMenu={(e) => e.preventDefault()}>
-      {text.split(" ").map((word, wordIndex) => (
-        <span
-          key={wordIndex}
-          id={wordIndex}
-          className={getClassByIndex(wordIndex)}
-          onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
-        >
-          {wordIndex > 0 && " "}{word}
-        </span>
-      ))}
+      {text.split(" ").map((word, wordIndex) => {
+        return (
+          <span
+            id={wordIndex}
+            className={getClassByIndex(wordIndex)}
+            onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
+          >
+            {word.concat(" ")}
+          </span>
+        );
+      })}
       {!isSource && !readOnly && (
         <ClickOutsideListener
           enabled={shouldShowMarkingPopup()}
           onClickOutside={(_) => {
             setSelectedMarking(null);
-            setOverlappingIndices([]);
             setSelection(null);
           }}
         >
@@ -276,10 +267,6 @@ export default function MarkingItem({
               disabled={isUpdateMarkingLoading}
               mouseX={mouseX}
               mouseY={mouseY}
-              overlapIndex={overlappingIndices.length > 1 ? overlappingIndices.indexOf(selectedMarking) + 1 : null}
-              overlapTotal={overlappingIndices.length > 1 ? overlappingIndices.length : null}
-              onPrevOverlap={() => cycleOverlap(-1)}
-              onNextOverlap={() => cycleOverlap(1)}
               createMarking={createMarking}
               deleteMarking={deleteMarking}
               updateMarking={updateMarking}
