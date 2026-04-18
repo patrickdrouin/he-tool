@@ -19,8 +19,8 @@
  * Written by Giovanni G. De Giacomo <giovanni@yaraku.com>, August 2023
  */
 
+import { Fragment, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 import {
@@ -241,14 +241,16 @@ export default function MarkingItem({
   return (
     <div className="col-sm-10 markingText tw-select-text tw-whitespace-pre-wrap" onContextMenu={(e) => e.preventDefault()}>
       {text.split(" ").map((word, wordIndex) => (
-        <span
-          key={wordIndex}
-          id={wordIndex}
-          className={getClassByIndex(wordIndex)}
-          onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
-        >
-          {wordIndex > 0 && " "}{word}
-        </span>
+        <Fragment key={wordIndex}>
+          {wordIndex > 0 && <span className="tw-select-none"> </span>}
+          <span
+            id={wordIndex}
+            className={getClassByIndex(wordIndex)}
+            onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
+          >
+            {word}
+          </span>
+        </Fragment>
       ))}
       {!isSource && !readOnly && (
         <ClickOutsideListener
