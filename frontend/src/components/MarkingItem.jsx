@@ -54,6 +54,7 @@ export default function MarkingItem({
 
   function createMarking({ start, end, category, severity, comment }) {
     setSelectedMarking(null);
+    setOverlappingIndices([]);
     setSelection(null);
 
     // Assert that neither start or end are NaN
@@ -95,6 +96,7 @@ export default function MarkingItem({
 
   function deleteMarking({ marking }) {
     setSelectedMarking(null);
+    setOverlappingIndices([]);
     setSelection(null);
     deleteAnnotationMarking({
       annotationId,
@@ -231,6 +233,7 @@ export default function MarkingItem({
         return;
       }
 
+      setSelectedMarking(null);
       setOverlappingIndices([]);
       setSelection(selection);
       setMouseX(e.clientX);
