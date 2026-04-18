@@ -240,17 +240,16 @@ export default function MarkingItem({
 
   return (
     <div className="col-sm-10 markingText tw-select-text tw-whitespace-pre-wrap" onContextMenu={(e) => e.preventDefault()}>
-      {text.split(" ").map((word, wordIndex) => {
-        return (
-          <span
-            id={wordIndex}
-            className={getClassByIndex(wordIndex)}
-            onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
-          >
-            {word.concat(" ")}
-          </span>
-        );
-      })}
+      {text.split(" ").map((word, wordIndex) => (
+        <span
+          key={wordIndex}
+          id={wordIndex}
+          className={getClassByIndex(wordIndex)}
+          onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
+        >
+          {wordIndex > 0 && " "}{word}
+        </span>
+      ))}
       {!isSource && !readOnly && (
         <ClickOutsideListener
           enabled={shouldShowMarkingPopup()}
