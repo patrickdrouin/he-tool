@@ -239,8 +239,8 @@ export default function MarkingItem({
   }
 
   return (
-    <div className="col-sm-10 markingText tw-select-text tw-whitespace-pre-wrap" onContextMenu={(e) => e.preventDefault()}>
-      {text.split(" ").map((word, wordIndex) => (
+    <div className="col-sm-10 markingText tw-select-text tw-whitespace-normal" onContextMenu={(e) => e.preventDefault()}>
+      {text.trim().replace(/\s+/g, " ").split(" ").map((word, wordIndex) => (
         <Fragment key={wordIndex}>
           {wordIndex > 0 && <span className="tw-select-none"> </span>}
           <span
