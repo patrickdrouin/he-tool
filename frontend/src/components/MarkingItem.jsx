@@ -197,24 +197,19 @@ export default function MarkingItem({
     return (e) => {
       e.preventDefault();
 
-      const selection = window.getSelection();
-      if (selection.isCollapsed) {
-        return;
-      }
+      // Default to the right-clicked word; only extend to a range when the
+      // user has made an explicit multi-word drag selection.
+      let start = index;
+      let end = index;
 
-      let start = parseInt(selection.anchorNode.parentElement.id);
-      let end = parseInt(selection.focusNode.parentElement.id);
-      if (start > end) {
-        [start, end] = [end, start];
-      }
-
-      // Return early if selection is invalid
-      if (isNaN(start) || isNaN(end)) {
-        toast.error(
-          "Selection is invalid. Please select carefully and try again.",
-        );
-
-        return;
+      const sel = window.getSelection();
+      if (!sel.isCollapsed) {
+        const anchorId = parseInt(sel.anchorNode?.parentElement?.id);
+        const focusId = parseInt(sel.focusNode?.parentElement?.id);
+        if (!isNaN(anchorId) && !isNaN(focusId) && anchorId !== focusId) {
+          start = Math.min(anchorId, focusId);
+          end = Math.max(anchorId, focusId);
+        }
       }
 
       // Return early if marking overlaps with existing marking
@@ -228,7 +223,7 @@ export default function MarkingItem({
         }
       }
 
-      setSelection(selection);
+      setSelection({ start, end });
       setMouseX(e.clientX);
       setMouseY(e.clientY);
     };
@@ -247,6 +242,13 @@ export default function MarkingItem({
             id={wordIndex}
             className={getClassByIndex(wordIndex)}
             onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
+            onDoubleClick={(e) => {
+              const range = document.createRange();
+              range.selectNodeContents(e.currentTarget);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }}
           >
             {word}
           </span>
