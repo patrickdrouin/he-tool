@@ -46,6 +46,10 @@ export default function MarkingPopup({
   disabled,
   mouseX,
   mouseY,
+  overlapIndex,
+  overlapTotal,
+  onPrevOverlap,
+  onNextOverlap,
   createMarking,
   deleteMarking,
   updateMarking,
@@ -87,6 +91,15 @@ export default function MarkingPopup({
       }}
     >
       <div className="tw-inline-flex tw-flex-col tw-gap-y-1.5 tw-text-sm">
+        {overlapTotal > 1 && (
+          <div className="tw-flex tw-items-center tw-justify-between tw-text-xs tw-text-gray-500 tw-bg-gray-50 tw-rounded tw-px-2 tw-py-1">
+            <span>Marking {overlapIndex} of {overlapTotal}</span>
+            <div className="tw-flex tw-gap-1">
+              <button className="btn btn-sm btn-outline-secondary tw-py-0 tw-px-2" onClick={onPrevOverlap}>&#9664;</button>
+              <button className="btn btn-sm btn-outline-secondary tw-py-0 tw-px-2" onClick={onNextOverlap}>&#9654;</button>
+            </div>
+          </div>
+        )}
         <div className="tw-inline-flex tw-flex-row tw-gap-x-1.5">
           <ErrorCategorySelector
             className="btn btn-outline-dark"

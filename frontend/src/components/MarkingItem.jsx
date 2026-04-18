@@ -41,6 +41,7 @@ export default function MarkingItem({
   text,
 }) {
   const [selectedMarking, setSelectedMarking] = useState(null);
+  const [overlappingIndices, setOverlappingIndices] = useState([]);
   const [selection, setSelection] = useState(null);
   const [mouseX, setMouseX] = useState(null);
   const [mouseY, setMouseY] = useState(null);
@@ -174,60 +175,63 @@ export default function MarkingItem({
     }
   }
 
+  const SEVERITY_ORDER = ["critical", "major", "minor", "not-judgeable", "no-error"];
+
+  function getMarkingsAtIndex(index) {
+    return annotationMarkings
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => index >= m.errorStart && index <= m.errorEnd);
+  }
+
   function getClassByIndex(index) {
-    for (const marking of annotationMarkings) {
-      if (index >= marking.errorStart && index <= marking.errorEnd) {
-        return getClassBySeverity(marking.errorSeverity);
-      }
-    }
+    const matches = getMarkingsAtIndex(index);
+    if (matches.length === 0) return undefined;
+    matches.sort(
+      (a, b) =>
+        SEVERITY_ORDER.indexOf(a.m.errorSeverity) -
+        SEVERITY_ORDER.indexOf(b.m.errorSeverity),
+    );
+    const base = getClassBySeverity(matches[0].m.errorSeverity);
+    // Double underline indicates overlapping markings
+    return matches.length > 1 ? `${base} tw-underline tw-decoration-double` : base;
+  }
+
+  function cycleOverlap(dir) {
+    const pos = overlappingIndices.indexOf(selectedMarking);
+    const next = (pos + dir + overlappingIndices.length) % overlappingIndices.length;
+    setSelectedMarking(overlappingIndices[next]);
   }
 
   function getContextMenuByIndex(index) {
-    for (const [markingIndex, marking] of annotationMarkings.entries()) {
-      if (index >= marking.errorStart && index <= marking.errorEnd) {
-        return (e) => {
-          e.preventDefault();
-          setSelectedMarking(markingIndex);
-          setMouseX(e.clientX);
-          setMouseY(e.clientY);
-        };
-      }
+    const matches = getMarkingsAtIndex(index);
+
+    if (matches.length > 0) {
+      return (e) => {
+        e.preventDefault();
+        const indices = matches.map(({ i }) => i);
+        setOverlappingIndices(indices);
+        setSelectedMarking(indices[0]);
+        setMouseX(e.clientX);
+        setMouseY(e.clientY);
+      };
     }
 
     return (e) => {
       e.preventDefault();
 
       const selection = window.getSelection();
-      if (selection.isCollapsed) {
-        return;
-      }
+      if (selection.isCollapsed) return;
 
       let start = parseInt(selection.anchorNode.parentElement.id);
       let end = parseInt(selection.focusNode.parentElement.id);
-      if (start > end) {
-        [start, end] = [end, start];
-      }
+      if (start > end) [start, end] = [end, start];
 
-      // Return early if selection is invalid
       if (isNaN(start) || isNaN(end)) {
-        toast.error(
-          "Selection is invalid. Please select carefully and try again.",
-        );
-
+        toast.error("Selection is invalid. Please select carefully and try again.");
         return;
       }
 
-      // Return early if marking overlaps with existing marking
-      for (const marking of annotationMarkings) {
-        if (
-          (marking.errorStart >= start && marking.errorStart <= end) ||
-          (marking.errorEnd >= start && marking.errorEnd <= end)
-        ) {
-          toast.error("Selection overlaps with existing marking.");
-          return;
-        }
-      }
-
+      setOverlappingIndices([]);
       setSelection(selection);
       setMouseX(e.clientX);
       setMouseY(e.clientY);
@@ -256,6 +260,7 @@ export default function MarkingItem({
           enabled={shouldShowMarkingPopup()}
           onClickOutside={(_) => {
             setSelectedMarking(null);
+            setOverlappingIndices([]);
             setSelection(null);
           }}
         >
@@ -267,6 +272,10 @@ export default function MarkingItem({
               disabled={isUpdateMarkingLoading}
               mouseX={mouseX}
               mouseY={mouseY}
+              overlapIndex={overlappingIndices.length > 1 ? overlappingIndices.indexOf(selectedMarking) + 1 : null}
+              overlapTotal={overlappingIndices.length > 1 ? overlappingIndices.length : null}
+              onPrevOverlap={() => cycleOverlap(-1)}
+              onNextOverlap={() => cycleOverlap(1)}
               createMarking={createMarking}
               deleteMarking={deleteMarking}
               updateMarking={updateMarking}
