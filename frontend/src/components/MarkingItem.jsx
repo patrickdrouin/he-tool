@@ -174,56 +174,58 @@ export default function MarkingItem({
     }
   }
 
+  const severityOrder = ["critical", "major", "minor", "not-judgeable", "no-error"];
+
   function getClassByIndex(index) {
+    let bestClass = null;
+    let bestPriority = severityOrder.length;
     for (const marking of annotationMarkings) {
       if (index >= marking.errorStart && index <= marking.errorEnd) {
-        return getClassBySeverity(marking.errorSeverity);
+        const priority = severityOrder.indexOf(marking.errorSeverity);
+        if (priority < bestPriority) {
+          bestPriority = priority;
+          bestClass = getClassBySeverity(marking.errorSeverity);
+        }
       }
     }
+    return bestClass;
   }
 
   function getContextMenuByIndex(index) {
-    for (const [markingIndex, marking] of annotationMarkings.entries()) {
-      if (index >= marking.errorStart && index <= marking.errorEnd) {
-        return (e) => {
-          e.preventDefault();
-          setSelectedMarking(markingIndex);
-          setMouseX(e.clientX);
-          setMouseY(e.clientY);
-        };
-      }
-    }
-
     return (e) => {
       e.preventDefault();
 
-      // Default to the right-clicked word; only extend to a range when the
-      // user has made an explicit multi-word drag selection.
-      let start = index;
-      let end = index;
-
       const sel = window.getSelection();
+
+      // With an active text selection the intent is always to create a new marking,
+      // even when the selection overlaps existing ones.
       if (!sel.isCollapsed) {
+        let start = index;
+        let end = index;
         const anchorId = parseInt(sel.anchorNode?.parentElement?.id);
         const focusId = parseInt(sel.focusNode?.parentElement?.id);
         if (!isNaN(anchorId) && !isNaN(focusId) && anchorId !== focusId) {
           start = Math.min(anchorId, focusId);
           end = Math.max(anchorId, focusId);
         }
+        setSelection({ start, end });
+        setMouseX(e.clientX);
+        setMouseY(e.clientY);
+        return;
       }
 
-      // Return early if marking overlaps with existing marking
-      for (const marking of annotationMarkings) {
-        if (
-          (marking.errorStart >= start && marking.errorStart <= end) ||
-          (marking.errorEnd >= start && marking.errorEnd <= end)
-        ) {
-          toast.error("Selection overlaps with existing marking.");
+      // No selection: edit the first marking that covers this word, or create
+      // a single-word marking if the word is not yet marked.
+      for (const [markingIndex, marking] of annotationMarkings.entries()) {
+        if (index >= marking.errorStart && index <= marking.errorEnd) {
+          setSelectedMarking(markingIndex);
+          setMouseX(e.clientX);
+          setMouseY(e.clientY);
           return;
         }
       }
 
-      setSelection({ start, end });
+      setSelection({ start: index, end: index });
       setMouseX(e.clientX);
       setMouseY(e.clientY);
     };
