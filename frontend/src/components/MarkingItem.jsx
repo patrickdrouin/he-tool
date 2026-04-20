@@ -19,7 +19,7 @@
  * Written by Giovanni G. De Giacomo <giovanni@yaraku.com>, August 2023
  */
 
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 
@@ -45,6 +45,8 @@ export default function MarkingItem({
   const [selection, setSelection] = useState(null);
   const [mouseX, setMouseX] = useState(null);
   const [mouseY, setMouseY] = useState(null);
+  // Capture selection on mousedown because right-click clears it before contextmenu fires.
+  const savedSelectionRef = useRef(null);
   const queryClient = useQueryClient();
 
   const { createAnnotationMarking } = useCreateAnnotationMarking();
@@ -198,27 +200,20 @@ export default function MarkingItem({
     return (e) => {
       e.preventDefault();
 
-      const sel = window.getSelection();
+      const saved = savedSelectionRef.current;
 
-      // With an active text selection the intent is always to create a new marking,
-      // even when the selection overlaps existing ones.
-      if (!sel.isCollapsed) {
-        let start = index;
-        let end = index;
-        const anchorId = parseInt(sel.anchorNode?.parentElement?.id);
-        const focusId = parseInt(sel.focusNode?.parentElement?.id);
-        if (!isNaN(anchorId) && !isNaN(focusId) && anchorId !== focusId) {
-          start = Math.min(anchorId, focusId);
-          end = Math.max(anchorId, focusId);
-        }
-        setSelection({ start, end });
+      // Use the selection captured on mousedown (right-click clears it before
+      // contextmenu fires on many browsers). A multi-word saved selection means
+      // the user drag-selected text and wants to create a new marking.
+      if (saved && saved.start !== saved.end) {
+        setSelection({ start: saved.start, end: saved.end });
         setMouseX(e.clientX);
         setMouseY(e.clientY);
         return;
       }
 
-      // No selection: edit the first marking that covers this word, or create
-      // a single-word marking if the word is not yet marked.
+      // No multi-word selection: edit the first marking that covers this word,
+      // or create a single-word marking if the word is not yet marked.
       for (const [markingIndex, marking] of annotationMarkings.entries()) {
         if (index >= marking.errorStart && index <= marking.errorEnd) {
           setSelectedWordIndex(index);
@@ -257,7 +252,26 @@ export default function MarkingItem({
   }
 
   return (
-    <div className="col-sm-10 markingText tw-select-text tw-whitespace-normal">
+    <div
+      className="col-sm-10 markingText tw-select-text tw-whitespace-normal"
+      onMouseDown={() => {
+        const sel = window.getSelection();
+        if (!sel.isCollapsed) {
+          const anchorId = parseInt(sel.anchorNode?.parentElement?.id);
+          const focusId = parseInt(sel.focusNode?.parentElement?.id);
+          if (!isNaN(anchorId) && !isNaN(focusId)) {
+            savedSelectionRef.current = {
+              start: Math.min(anchorId, focusId),
+              end: Math.max(anchorId, focusId),
+            };
+          } else {
+            savedSelectionRef.current = null;
+          }
+        } else {
+          savedSelectionRef.current = null;
+        }
+      }}
+    >
       {text.trim().replace(/\s+/g, " ").split(" ").map((word, wordIndex) => (
         <Fragment key={wordIndex}>
           {wordIndex > 0 && <span className="tw-select-none"> </span>}
