@@ -46,6 +46,10 @@ export default function MarkingPopup({
   disabled,
   mouseX,
   mouseY,
+  markingPosition,
+  markingCount,
+  onPrevMarking,
+  onNextMarking,
   createMarking,
   deleteMarking,
   updateMarking,
@@ -76,6 +80,13 @@ export default function MarkingPopup({
       }}
     >
       <div className="tw-inline-flex tw-flex-col tw-gap-y-1.5 tw-text-sm">
+        {marking && markingCount > 1 && (
+          <div className="tw-flex tw-items-center tw-justify-between tw-gap-x-2 tw-text-xs tw-text-gray-500">
+            <button className="btn btn-sm btn-outline-secondary tw-py-0 tw-px-1.5" onClick={onPrevMarking}>◀</button>
+            <span>{markingPosition} / {markingCount}</span>
+            <button className="btn btn-sm btn-outline-secondary tw-py-0 tw-px-1.5" onClick={onNextMarking}>▶</button>
+          </div>
+        )}
         <div className="tw-inline-flex tw-flex-row tw-gap-x-1.5">
           <ErrorCategorySelector
             className="btn btn-outline-dark"

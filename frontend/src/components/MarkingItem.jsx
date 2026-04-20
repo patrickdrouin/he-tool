@@ -41,6 +41,7 @@ export default function MarkingItem({
   text,
 }) {
   const [selectedMarking, setSelectedMarking] = useState(null);
+  const [selectedWordIndex, setSelectedWordIndex] = useState(null);
   const [selection, setSelection] = useState(null);
   const [mouseX, setMouseX] = useState(null);
   const [mouseY, setMouseY] = useState(null);
@@ -53,6 +54,7 @@ export default function MarkingItem({
 
   function createMarking({ start, end, category, severity, comment }) {
     setSelectedMarking(null);
+    setSelectedWordIndex(null);
     setSelection(null);
 
     // Assert that neither start or end are NaN
@@ -94,6 +96,7 @@ export default function MarkingItem({
 
   function deleteMarking({ marking }) {
     setSelectedMarking(null);
+    setSelectedWordIndex(null);
     setSelection(null);
     deleteAnnotationMarking({
       annotationId,
@@ -218,6 +221,7 @@ export default function MarkingItem({
       // a single-word marking if the word is not yet marked.
       for (const [markingIndex, marking] of annotationMarkings.entries()) {
         if (index >= marking.errorStart && index <= marking.errorEnd) {
+          setSelectedWordIndex(index);
           setSelectedMarking(markingIndex);
           setMouseX(e.clientX);
           setMouseY(e.clientY);
@@ -229,6 +233,23 @@ export default function MarkingItem({
       setMouseX(e.clientX);
       setMouseY(e.clientY);
     };
+  }
+
+  const markingsOnSelectedWord = selectedWordIndex !== null
+    ? annotationMarkings
+        .map((m, i) => ({ ...m, _arrayIndex: i }))
+        .filter(m => selectedWordIndex >= m.errorStart && selectedWordIndex <= m.errorEnd)
+    : [];
+  const currentPosInWord = markingsOnSelectedWord.findIndex(m => m._arrayIndex === selectedMarking);
+
+  function goToPrevMarking() {
+    const idx = (currentPosInWord - 1 + markingsOnSelectedWord.length) % markingsOnSelectedWord.length;
+    setSelectedMarking(markingsOnSelectedWord[idx]._arrayIndex);
+  }
+
+  function goToNextMarking() {
+    const idx = (currentPosInWord + 1) % markingsOnSelectedWord.length;
+    setSelectedMarking(markingsOnSelectedWord[idx]._arrayIndex);
   }
 
   function shouldShowMarkingPopup() {
@@ -245,14 +266,34 @@ export default function MarkingItem({
             className={getClassByIndex(wordIndex)}
             onContextMenu={isSource || readOnly ? (e) => e.preventDefault() : getContextMenuByIndex(wordIndex)}
             onDoubleClick={(e) => {
-              const range = document.createRange();
-              range.selectNodeContents(e.currentTarget);
-              const sel = window.getSelection();
-              sel.removeAllRanges();
-              sel.addRange(range);
+              const textNode = Array.from(e.currentTarget.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+              if (textNode) {
+                const range = document.createRange();
+                range.selectNode(textNode);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }
             }}
           >
             {word}
+            {!isSource && !readOnly && annotationMarkings.some(m => wordIndex >= m.errorStart && wordIndex <= m.errorEnd) && (
+              <button
+                className="tw-ml-0.5 tw-text-[9px] tw-font-bold tw-bg-white tw-text-gray-700 tw-rounded-full tw-w-3 tw-h-3 tw-inline-flex tw-items-center tw-justify-center tw-select-none tw-border-0 tw-p-0 tw-cursor-pointer"
+                title="Add another annotation"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedWordIndex(null);
+                  setSelectedMarking(null);
+                  setSelection({ start: wordIndex, end: wordIndex });
+                  setMouseX(e.clientX);
+                  setMouseY(e.clientY);
+                }}
+                onDoubleClick={(e) => e.stopPropagation()}
+              >
+                +
+              </button>
+            )}
           </span>
         </Fragment>
       ))}
@@ -261,6 +302,7 @@ export default function MarkingItem({
           enabled={shouldShowMarkingPopup()}
           onClickOutside={(_) => {
             setSelectedMarking(null);
+            setSelectedWordIndex(null);
             setSelection(null);
           }}
         >
@@ -272,6 +314,10 @@ export default function MarkingItem({
               disabled={isUpdateMarkingLoading}
               mouseX={mouseX}
               mouseY={mouseY}
+              markingPosition={currentPosInWord >= 0 ? currentPosInWord + 1 : 1}
+              markingCount={markingsOnSelectedWord.length}
+              onPrevMarking={goToPrevMarking}
+              onNextMarking={goToNextMarking}
               createMarking={createMarking}
               deleteMarking={deleteMarking}
               updateMarking={updateMarking}
