@@ -277,23 +277,27 @@ export default function MarkingItem({
             }}
           >
             {word}
-            {!isSource && !readOnly && annotationMarkings.some(m => wordIndex >= m.errorStart && wordIndex <= m.errorEnd) && (
-              <button
-                className="tw-ml-0.5 tw-text-[9px] tw-font-bold tw-bg-white tw-text-gray-700 tw-rounded-full tw-w-3 tw-h-3 tw-inline-flex tw-items-center tw-justify-center tw-select-none tw-border-0 tw-p-0 tw-cursor-pointer"
-                title="Add another annotation"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedWordIndex(null);
-                  setSelectedMarking(null);
-                  setSelection({ start: wordIndex, end: wordIndex });
-                  setMouseX(e.clientX);
-                  setMouseY(e.clientY);
-                }}
-                onDoubleClick={(e) => e.stopPropagation()}
-              >
-                +
-              </button>
-            )}
+            {!isSource && !readOnly && annotationMarkings
+              .filter(m => wordIndex === m.errorEnd)
+              .map((m, i) => (
+                <button
+                  key={i}
+                  className="tw-ml-0.5 tw-text-[9px] tw-font-bold tw-bg-white tw-text-gray-700 tw-rounded-full tw-w-3 tw-h-3 tw-inline-flex tw-items-center tw-justify-center tw-select-none tw-border-0 tw-p-0 tw-cursor-pointer"
+                  title="Add another annotation to this span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedWordIndex(null);
+                    setSelectedMarking(null);
+                    setSelection({ start: m.errorStart, end: m.errorEnd });
+                    setMouseX(e.clientX);
+                    setMouseY(e.clientY);
+                  }}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  +
+                </button>
+              ))
+            }
           </span>
         </Fragment>
       ))}
