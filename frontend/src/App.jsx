@@ -39,6 +39,7 @@ import AdminPage from "./pages/Admin";
 import AnnotatePage from "./pages/Annotate";
 import EvaluationDetailPage from "./pages/EvaluationDetail";
 import EvaluationsPage from "./pages/Evaluations";
+import ChangePasswordPage from "./pages/ChangePassword";
 import LoginPage from "./pages/Login";
 import NotFoundPage from "./pages/NotFound";
 import ProfilePage from "./pages/Profile";
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route

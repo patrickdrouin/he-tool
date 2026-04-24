@@ -162,23 +162,20 @@ def me() -> ResponseReturnValue:
 
 
 @bp.post("/api/auth/change-password")
-@_typed_jwt_required()
 def change_password() -> ResponseReturnValue:
-    """Change the current user's password."""
+    """Change a user's password. Requires email, current password, and new password."""
 
     from sqlalchemy.exc import SQLAlchemyError
 
     data = request.get_json(silent=True) or {}
-    if "current_password" not in data or "new_password" not in data:
+    if not all(k in data for k in ("email", "current_password", "new_password")):
         return {"message": "Missing required fields"}, 422
 
-    identity = get_jwt_identity()
-    user = db.session.get(User, int(identity))
-    if user is None:
-        return {"message": "User not found"}, 404
-
-    if not bcrypt.check_password_hash(pw_hash=user.password, password=data["current_password"]):
-        return {"message": "Current password is incorrect"}, 401
+    user = db.session.execute(
+        select(User).filter_by(email=data["email"])
+    ).scalar_one_or_none()
+    if user is None or not bcrypt.check_password_hash(pw_hash=user.password, password=data["current_password"]):
+        return {"message": "Invalid email or current password"}, 401
 
     if len(data["new_password"]) < 8:
         return {"message": "New password must be at least 8 characters"}, 422

@@ -85,9 +85,14 @@ export default function LoginForm() {
         </div>
       </fieldset>
       <div className="form-group tw-mt-2 tw-flex tw-items-center tw-justify-between">
-        <Link className="tw-text-sm" to="/register">
-          Don't have an account? Sign up
-        </Link>
+        <div className="tw-flex tw-flex-col tw-gap-1">
+          <Link className="tw-text-sm" to="/register">
+            Don't have an account? Sign up
+          </Link>
+          <Link className="tw-text-sm" to="/change-password">
+            Change password
+          </Link>
+        </div>
         <input
           className="btn btn-outline-info"
           disabled={isLoading}
