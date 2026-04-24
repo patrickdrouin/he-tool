@@ -174,6 +174,30 @@ def create_app(config_override: Mapping[str, Any] | None = None) -> Flask:
         role = "admin" if is_admin else "user"
         click.echo(f"Created {role} {email!r} (id={user.id}).")
 
+    @app.cli.command("reset-password")
+    @click.argument("email")
+    @click.argument("new_password")
+    def reset_password_command(email: str, new_password: str) -> None:
+        """Reset the password for an existing user.
+
+        \b
+        Example:
+            flask reset-password user@example.com newpassword123
+        """
+        from .models import User
+
+        user = db.session.execute(
+            select(User).filter_by(email=email)
+        ).scalar_one_or_none()
+        if user is None:
+            click.echo(f"Error: no user with email {email!r}.", err=True)
+            raise SystemExit(1)
+
+        user.password = bcrypt.generate_password_hash(new_password).decode("utf-8")
+        user.updatedAt = datetime.now()
+        db.session.commit()
+        click.echo(f"Password reset for {email!r}.")
+
     @app.cli.command("make-admin")
     @click.argument("email")
     def make_admin_command(email: str) -> None:
