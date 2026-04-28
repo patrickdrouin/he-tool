@@ -85,6 +85,25 @@ export async function deleteEvaluationTask({ evaluationId, bitextId }) {
   return data;
 }
 
+export async function deleteEvaluation({ evaluationId }) {
+  const response = await fetch("/api/admin/evaluation", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ evaluation_id: evaluationId }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Failed to delete evaluation: ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function importEvaluation({ evaluation, system, users, pairs }) {
   const response = await fetch("/api/admin/import", {
     method: "POST",

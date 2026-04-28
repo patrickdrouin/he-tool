@@ -24,7 +24,7 @@ import toast from "react-hot-toast";
 import Spinner from "../components/Spinner";
 import LanguageSelector from "../components/LanguageSelector";
 import AnnotatorProgress from "../components/AnnotatorProgress";
-import { assignEvaluation, unassignEvaluation, importEvaluation, getEvaluationBitexts, deleteEvaluationTask } from "../services/apiAdmin";
+import { assignEvaluation, unassignEvaluation, importEvaluation, getEvaluationBitexts, deleteEvaluationTask, deleteEvaluation } from "../services/apiAdmin";
 import { register } from "../services/apiAuth";
 import { deleteUser, setUserAdmin } from "../services/apiUsers";
 import { useUsers } from "../features/admin/useUsers";
@@ -197,6 +197,29 @@ export default function AdminPage() {
       toast.error(err.message);
     } finally {
       setDeletingBitextId(null);
+    }
+  }
+
+  // — Delete evaluation state —
+  const [deleteEvalId, setDeleteEvalId] = useState("");
+  const [isDeletingEval, setIsDeletingEval] = useState(false);
+
+  async function handleDeleteEvaluation(e) {
+    e.preventDefault();
+    if (!deleteEvalId) { toast.error("Select an evaluation."); return; }
+    const evalName = evaluations.find((ev) => String(ev.id) === deleteEvalId)?.name ?? "";
+    if (!window.confirm(`Delete the entire evaluation "${evalName}"? This will permanently erase all segments, annotations, and markings for every annotator and cannot be undone.`)) return;
+
+    setIsDeletingEval(true);
+    try {
+      const result = await deleteEvaluation({ evaluationId: Number(deleteEvalId) });
+      toast.success(result.message);
+      setDeleteEvalId("");
+      queryClient.invalidateQueries({ queryKey: ["evaluations"] });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsDeletingEval(false);
     }
   }
 
@@ -519,6 +542,41 @@ export default function AdminPage() {
           </tbody>
         </table>
       )}
+
+      <hr className="tw-my-6" />
+
+      {/* ── Delete Evaluation ── */}
+      <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
+        Admin — Delete Evaluation
+      </h2>
+      <p className="tw-mb-4 tw-text-sm tw-text-gray-600">
+        Permanently delete an entire evaluation project: all segments, annotations, and markings for every annotator. This cannot be undone.
+      </p>
+      <form onSubmit={handleDeleteEvaluation} className="tw-mb-10">
+        <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
+          <div className="form-group">
+            <label className="form-control-label tw-font-semibold" htmlFor="delete_eval">
+              Evaluation
+            </label>
+            <select
+              className="form-control form-control-lg tw-mt-1"
+              disabled={isDeletingEval}
+              id="delete_eval"
+              value={deleteEvalId}
+              onChange={(e) => setDeleteEvalId(e.target.value)}
+              required
+            >
+              <option value="">— select —</option>
+              {evaluations.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.name}</option>
+              ))}
+            </select>
+          </div>
+          <button className="btn btn-danger tw-mb-1" disabled={isDeletingEval} type="submit">
+            {isDeletingEval ? "Deleting…" : "Delete evaluation"}
+          </button>
+        </div>
+      </form>
 
       <hr className="tw-my-6" />
 

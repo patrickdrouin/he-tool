@@ -404,6 +404,70 @@ def delete_evaluation_task() -> ResponseReturnValue:
         return {"message": str(exc)}, 500
 
 
+@bp.delete("/api/admin/evaluation")
+@jwt_required()
+def delete_evaluation() -> ResponseReturnValue:
+    """Delete an entire evaluation and all associated data.
+
+    Deletes all annotations (and their markings), all bitexts, the
+    parent document, and the evaluation record itself.
+
+    Request body: { "evaluation_id": 3 }
+    """
+
+    data = request.get_json(silent=True) or {}
+    if "evaluation_id" not in data:
+        return {"message": "Missing evaluation_id"}, 422
+
+    evaluation = db.session.get(Evaluation, int(data["evaluation_id"]))
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    try:
+        annotations = (
+            db.session.execute(select(Annotation).filter_by(evaluationId=evaluation.id))
+            .scalars()
+            .all()
+        )
+        bitext_ids = {ann.bitextId for ann in annotations}
+
+        for annotation in annotations:
+            db.session.delete(annotation)
+        db.session.flush()
+
+        db.session.delete(evaluation)
+        db.session.flush()
+
+        # Remove bitexts (and their parent document) no longer referenced
+        document_ids: set[int] = set()
+        for bitext_id in bitext_ids:
+            still_used = db.session.execute(
+                select(func.count()).select_from(Annotation).filter_by(bitextId=bitext_id)
+            ).scalar()
+            if still_used == 0:
+                bitext = db.session.get(Bitext, bitext_id)
+                if bitext:
+                    document_ids.add(bitext.documentId)
+                    db.session.delete(bitext)
+        db.session.flush()
+
+        for doc_id in document_ids:
+            remaining = db.session.execute(
+                select(func.count()).select_from(Bitext).filter_by(documentId=doc_id)
+            ).scalar()
+            if remaining == 0:
+                document = db.session.get(Document, doc_id)
+                if document:
+                    db.session.delete(document)
+
+        db.session.commit()
+        return jsonify({"message": "Evaluation deleted"}), 200
+
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"message": str(exc)}, 500
+
+
 @bp.get("/api/admin/progress")
 @jwt_required()
 def get_progress() -> ResponseReturnValue:
