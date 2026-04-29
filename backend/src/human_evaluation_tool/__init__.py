@@ -412,6 +412,7 @@ def _maybe_seed_sqlite_sample_data(app: Flask) -> None:
                 email=default_email,
                 password=bcrypt.generate_password_hash("yaraku").decode("utf-8"),
                 nativeLanguage="en",
+                isAdmin=True,
                 createdAt=now,
                 updatedAt=now,
             )
