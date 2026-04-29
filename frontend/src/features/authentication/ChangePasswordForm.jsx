@@ -13,11 +13,11 @@ export default function ChangePasswordForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match.");
+      toast.error("Les nouveaux mots de passe ne correspondent pas.");
       return;
     }
     if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters.");
+      toast.error("Le nouveau mot de passe doit comporter au moins 8 caractères.");
       return;
     }
     setIsLoading(true);
@@ -33,13 +33,13 @@ export default function ChangePasswordForm() {
       });
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.message || "Failed to change password.");
+        toast.error(data.message || "Échec de la modification du mot de passe.");
       } else {
-        toast.success("Password changed successfully.");
+        toast.success("Mot de passe modifié avec succès.");
         navigate("/login");
       }
     } catch {
-      toast.error("Network error. Please try again.");
+      toast.error("Erreur réseau. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }
@@ -48,9 +48,9 @@ export default function ChangePasswordForm() {
   return (
     <form method="POST" onSubmit={handleSubmit}>
       <fieldset className="form-group">
-        <legend className="border-bottom mb-4">Change Password</legend>
+        <legend className="border-bottom mb-4">Modifier le mot de passe</legend>
         <div className="form-group tw-my-2">
-          <label className="form-control-label" htmlFor="email">Email</label>
+          <label className="form-control-label" htmlFor="email">Courriel</label>
           <input
             className="form-control form-control-lg"
             disabled={isLoading}
@@ -62,7 +62,7 @@ export default function ChangePasswordForm() {
           />
         </div>
         <div className="form-group tw-my-2">
-          <label className="form-control-label" htmlFor="current-password">Current Password</label>
+          <label className="form-control-label" htmlFor="current-password">Mot de passe actuel</label>
           <input
             className="form-control form-control-lg"
             disabled={isLoading}
@@ -74,7 +74,7 @@ export default function ChangePasswordForm() {
           />
         </div>
         <div className="form-group tw-my-2">
-          <label className="form-control-label" htmlFor="new-password">New Password</label>
+          <label className="form-control-label" htmlFor="new-password">Nouveau mot de passe</label>
           <input
             className="form-control form-control-lg"
             disabled={isLoading}
@@ -86,7 +86,7 @@ export default function ChangePasswordForm() {
           />
         </div>
         <div className="form-group tw-my-2">
-          <label className="form-control-label" htmlFor="confirm-password">Confirm New Password</label>
+          <label className="form-control-label" htmlFor="confirm-password">Confirmer le nouveau mot de passe</label>
           <input
             className="form-control form-control-lg"
             disabled={isLoading}
@@ -99,12 +99,12 @@ export default function ChangePasswordForm() {
         </div>
       </fieldset>
       <div className="form-group tw-mt-2 tw-flex tw-items-center tw-justify-between">
-        <Link className="tw-text-sm" to="/login">Back to login</Link>
+        <Link className="tw-text-sm" to="/login">Retour à la connexion</Link>
         <input
           className="btn btn-outline-info"
           disabled={isLoading}
           type="submit"
-          value="Change Password"
+          value="Modifier le mot de passe"
         />
       </div>
     </form>

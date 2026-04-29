@@ -46,7 +46,7 @@ function UserRow({ user, onRefresh }) {
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Delete user ${user.email}? This cannot be undone.`)) return;
+    if (!window.confirm(`Supprimer l'utilisateur ${user.email} ? Cette action est irréversible.`)) return;
     setBusy(true);
     try {
       await deleteUser({ id: user.id });
@@ -62,21 +62,21 @@ function UserRow({ user, onRefresh }) {
     <tr>
       <td>{user.email}</td>
       <td>{user.nativeLanguage}</td>
-      <td>{user.isAdmin ? "Yes" : "No"}</td>
+      <td>{user.isAdmin ? "Oui" : "Non"}</td>
       <td className="tw-space-x-2 tw-whitespace-nowrap">
         <button
           className="btn btn-sm btn-outline-secondary"
           disabled={busy}
           onClick={handleToggleAdmin}
         >
-          {user.isAdmin ? "Remove admin" : "Make admin"}
+          {user.isAdmin ? "Retirer admin" : "Rendre admin"}
         </button>
         <button
           className="btn btn-sm btn-outline-danger"
           disabled={busy}
           onClick={handleDelete}
         >
-          Delete
+          Supprimer
         </button>
       </td>
     </tr>
@@ -99,7 +99,7 @@ export default function AdminPage() {
     setIsCreating(true);
     try {
       await register({ email: newEmail, password: newPassword, nativeLanguage: newLang });
-      toast.success(`User ${newEmail} created.`);
+      toast.success(`Utilisateur ${newEmail} créé.`);
       setNewEmail(""); setNewPassword(""); setNewLang("fr");
       queryClient.invalidateQueries({ queryKey: ["users"] });
     } catch (err) {
@@ -116,8 +116,8 @@ export default function AdminPage() {
 
   async function handleAssign(e) {
     e.preventDefault();
-    if (!assignEvalId) { toast.error("Select an evaluation."); return; }
-    if (!assignUserEmail) { toast.error("Select a user."); return; }
+    if (!assignEvalId) { toast.error("Sélectionnez une évaluation."); return; }
+    if (!assignUserEmail) { toast.error("Sélectionnez un utilisateur."); return; }
 
     setIsAssigning(true);
     try {
@@ -143,10 +143,10 @@ export default function AdminPage() {
 
   async function handleUnassign(e) {
     e.preventDefault();
-    if (!unassignEvalId) { toast.error("Select an evaluation."); return; }
-    if (!unassignUserEmail) { toast.error("Select a user."); return; }
+    if (!unassignEvalId) { toast.error("Sélectionnez une évaluation."); return; }
+    if (!unassignUserEmail) { toast.error("Sélectionnez un utilisateur."); return; }
     const evalName = evaluations.find((ev) => String(ev.id) === unassignEvalId)?.name ?? "";
-    if (!window.confirm(`Remove all tasks of "${evalName}" from ${unassignUserEmail}? This will also delete all their markings and cannot be undone.`)) return;
+    if (!window.confirm(`Supprimer toutes les tâches de « ${evalName} » pour ${unassignUserEmail} ? Cela effacera également toutes leurs annotations et est irréversible.`)) return;
 
     setIsUnassigning(true);
     try {
@@ -187,11 +187,11 @@ export default function AdminPage() {
   }
 
   async function handleDeleteTask(bitextId) {
-    if (!window.confirm("Delete this task for all users? This removes all annotations and markings and cannot be undone.")) return;
+    if (!window.confirm("Supprimer cette tâche pour tous les utilisateurs ? Cela effacera toutes les annotations et est irréversible.")) return;
     setDeletingBitextId(bitextId);
     try {
       await deleteEvaluationTask({ evaluationId: Number(deleteTaskEvalId), bitextId });
-      toast.success("Task deleted.");
+      toast.success("Tâche supprimée.");
       setDeleteTaskBitexts((prev) => prev.filter((b) => b.bitext_id !== bitextId));
     } catch (err) {
       toast.error(err.message);
@@ -206,9 +206,9 @@ export default function AdminPage() {
 
   async function handleDeleteEvaluation(e) {
     e.preventDefault();
-    if (!deleteEvalId) { toast.error("Select an evaluation."); return; }
+    if (!deleteEvalId) { toast.error("Sélectionnez une évaluation."); return; }
     const evalName = evaluations.find((ev) => String(ev.id) === deleteEvalId)?.name ?? "";
-    if (!window.confirm(`Delete the entire evaluation "${evalName}"? This will permanently erase all segments, annotations, and markings for every annotator and cannot be undone.`)) return;
+    if (!window.confirm(`Supprimer l'évaluation « ${evalName} » ? Cela effacera de manière permanente tous les segments, annotations et marquages pour tous les annotateurs. Cette action est irréversible.`)) return;
 
     setIsDeletingEval(true);
     try {
@@ -241,11 +241,11 @@ export default function AdminPage() {
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
-        if (!Array.isArray(parsed)) throw new Error("File must contain a JSON array.");
+        if (!Array.isArray(parsed)) throw new Error("Le fichier doit contenir un tableau JSON.");
         setPairs(parsed);
-        toast.success(`Loaded ${parsed.length} segments from ${file.name}`);
+        toast.success(`${parsed.length} segments chargés depuis ${file.name}`);
       } catch (err) {
-        toast.error(`Invalid JSON: ${err.message}`);
+        toast.error(`JSON invalide : ${err.message}`);
         setPairs(null);
         setFileName("");
         fileRef.current.value = "";
@@ -263,10 +263,10 @@ export default function AdminPage() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!pairs) { toast.error("Please select a JSON file."); return; }
-    if (!evaluationName.trim()) { toast.error("Evaluation name is required."); return; }
-    if (!systemName.trim()) { toast.error("System name is required."); return; }
-    if (selectedUsers.length === 0) { toast.error("Select at least one annotator."); return; }
+    if (!pairs) { toast.error("Veuillez sélectionner un fichier JSON."); return; }
+    if (!evaluationName.trim()) { toast.error("Le nom de l'évaluation est requis."); return; }
+    if (!systemName.trim()) { toast.error("Le nom du système est requis."); return; }
+    if (selectedUsers.length === 0) { toast.error("Sélectionnez au moins un annotateur."); return; }
 
     setIsSubmitting(true);
     try {
@@ -298,7 +298,7 @@ export default function AdminPage() {
 
       {/* ── Annotator Progress ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Annotator Progress
+        Admin — Progression des annotateurs
       </h2>
       <AnnotatorProgress />
 
@@ -306,12 +306,12 @@ export default function AdminPage() {
 
       {/* ── Create User ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Create User
+        Admin — Créer un utilisateur
       </h2>
       <form onSubmit={handleCreateUser} className="tw-mb-10">
         <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
           <div className="form-group">
-            <label className="form-control-label tw-font-semibold" htmlFor="new_email">Email</label>
+            <label className="form-control-label tw-font-semibold" htmlFor="new_email">Courriel</label>
             <input
               className="form-control form-control-lg tw-mt-1"
               disabled={isCreating}
@@ -324,7 +324,7 @@ export default function AdminPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-control-label tw-font-semibold" htmlFor="new_password">Password</label>
+            <label className="form-control-label tw-font-semibold" htmlFor="new_password">Mot de passe</label>
             <input
               className="form-control form-control-lg tw-mt-1"
               disabled={isCreating}
@@ -337,7 +337,7 @@ export default function AdminPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-control-label tw-font-semibold" htmlFor="new_lang">Native language</label>
+            <label className="form-control-label tw-font-semibold" htmlFor="new_lang">Langue maternelle</label>
             <LanguageSelector
               className="form-control form-control-lg tw-mt-1"
               disabled={isCreating}
@@ -347,7 +347,7 @@ export default function AdminPage() {
             />
           </div>
           <button className="btn btn-primary tw-mb-1" disabled={isCreating} type="submit">
-            {isCreating ? "Creating…" : "Create user"}
+            {isCreating ? "Création…" : "Créer l'utilisateur"}
           </button>
         </div>
       </form>
@@ -356,16 +356,16 @@ export default function AdminPage() {
 
       {/* ── User List ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Manage Users
+        Admin — Gérer les utilisateurs
       </h2>
       {users.length === 0 ? (
-        <p className="tw-text-sm tw-text-gray-500 tw-mb-10">No users found.</p>
+        <p className="tw-text-sm tw-text-gray-500 tw-mb-10">Aucun utilisateur trouvé.</p>
       ) : (
         <table className="table tw-mb-10 tw-text-sm">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Language</th>
+              <th>Courriel</th>
+              <th>Langue</th>
               <th>Admin</th>
               <th></th>
             </tr>
@@ -386,13 +386,13 @@ export default function AdminPage() {
 
       {/* ── Assign Evaluation ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Assign Evaluation
+        Admin — Assigner une évaluation
       </h2>
       <form onSubmit={handleAssign} className="tw-mb-10">
         <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
           <div className="form-group">
             <label className="form-control-label tw-font-semibold" htmlFor="assign_eval">
-              Evaluation
+              Évaluation
             </label>
             <select
               className="form-control form-control-lg tw-mt-1"
@@ -410,7 +410,7 @@ export default function AdminPage() {
           </div>
           <div className="form-group">
             <label className="form-control-label tw-font-semibold" htmlFor="assign_user">
-              User
+              Utilisateur
             </label>
             <select
               className="form-control form-control-lg tw-mt-1"
@@ -427,7 +427,7 @@ export default function AdminPage() {
             </select>
           </div>
           <button className="btn btn-primary tw-mb-1" disabled={isAssigning} type="submit">
-            {isAssigning ? "Assigning…" : "Assign"}
+            {isAssigning ? "Assignation…" : "Assigner"}
           </button>
         </div>
       </form>
@@ -436,16 +436,16 @@ export default function AdminPage() {
 
       {/* ── Unassign Evaluation ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Delete Annotation Tasks
+        Admin — Supprimer des tâches d'annotation
       </h2>
       <p className="tw-mb-4 tw-text-sm tw-text-gray-600">
-        Remove all of a user&apos;s annotation tasks (and their markings) for a given evaluation. This cannot be undone.
+        Supprime toutes les tâches d'annotation d'un utilisateur (et leurs annotations) pour une évaluation donnée. Cette action est irréversible.
       </p>
       <form onSubmit={handleUnassign} className="tw-mb-10">
         <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
           <div className="form-group">
             <label className="form-control-label tw-font-semibold" htmlFor="unassign_eval">
-              Evaluation
+              Évaluation
             </label>
             <select
               className="form-control form-control-lg tw-mt-1"
@@ -463,7 +463,7 @@ export default function AdminPage() {
           </div>
           <div className="form-group">
             <label className="form-control-label tw-font-semibold" htmlFor="unassign_user">
-              User
+              Utilisateur
             </label>
             <select
               className="form-control form-control-lg tw-mt-1"
@@ -480,7 +480,7 @@ export default function AdminPage() {
             </select>
           </div>
           <button className="btn btn-danger tw-mb-1" disabled={isUnassigning} type="submit">
-            {isUnassigning ? "Deleting…" : "Delete tasks"}
+            {isUnassigning ? "Suppression…" : "Supprimer les tâches"}
           </button>
         </div>
       </form>
@@ -489,14 +489,14 @@ export default function AdminPage() {
 
       {/* ── Delete Evaluation Task ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Delete Evaluation Task
+        Admin — Supprimer une tâche d'évaluation
       </h2>
       <p className="tw-mb-4 tw-text-sm tw-text-gray-600">
-        Permanently remove a single source segment from an evaluation for all annotators. Also removes the source segment record itself.
+        Supprime définitivement un segment source d'une évaluation pour tous les annotateurs.
       </p>
       <div className="form-group tw-mb-4">
         <label className="form-control-label tw-font-semibold" htmlFor="delete_task_eval">
-          Evaluation
+          Évaluation
         </label>
         <select
           className="form-control form-control-lg tw-mt-1"
@@ -510,9 +510,9 @@ export default function AdminPage() {
           ))}
         </select>
       </div>
-      {isLoadingBitexts && <p className="tw-text-sm tw-text-gray-500">Loading tasks…</p>}
+      {isLoadingBitexts && <p className="tw-text-sm tw-text-gray-500">Chargement des tâches…</p>}
       {deleteTaskBitexts && deleteTaskBitexts.length === 0 && (
-        <p className="tw-text-sm tw-text-gray-500 tw-mb-10">No tasks found for this evaluation.</p>
+        <p className="tw-text-sm tw-text-gray-500 tw-mb-10">Aucune tâche trouvée pour cette évaluation.</p>
       )}
       {deleteTaskBitexts && deleteTaskBitexts.length > 0 && (
         <table className="table tw-mb-10 tw-text-sm">
@@ -534,7 +534,7 @@ export default function AdminPage() {
                     disabled={deletingBitextId === row.bitext_id}
                     onClick={() => handleDeleteTask(row.bitext_id)}
                   >
-                    {deletingBitextId === row.bitext_id ? "Deleting…" : "Delete"}
+                    {deletingBitextId === row.bitext_id ? "Suppression…" : "Supprimer"}
                   </button>
                 </td>
               </tr>
@@ -547,16 +547,16 @@ export default function AdminPage() {
 
       {/* ── Delete Evaluation ── */}
       <h2 className="tw-mb-4 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Delete Evaluation
+        Admin — Supprimer une évaluation
       </h2>
       <p className="tw-mb-4 tw-text-sm tw-text-gray-600">
-        Permanently delete an entire evaluation project: all segments, annotations, and markings for every annotator. This cannot be undone.
+        Supprime définitivement un projet d'évaluation : tous les segments, annotations et marquages pour tous les annotateurs. Cette action est irréversible.
       </p>
       <form onSubmit={handleDeleteEvaluation} className="tw-mb-10">
         <div className="tw-flex tw-flex-wrap tw-gap-4 tw-items-end">
           <div className="form-group">
             <label className="form-control-label tw-font-semibold" htmlFor="delete_eval">
-              Evaluation
+              Évaluation
             </label>
             <select
               className="form-control form-control-lg tw-mt-1"
@@ -573,7 +573,7 @@ export default function AdminPage() {
             </select>
           </div>
           <button className="btn btn-danger tw-mb-1" disabled={isDeletingEval} type="submit">
-            {isDeletingEval ? "Deleting…" : "Delete evaluation"}
+            {isDeletingEval ? "Suppression…" : "Supprimer l'évaluation"}
           </button>
         </div>
       </form>
@@ -582,14 +582,14 @@ export default function AdminPage() {
 
       {/* ── Import Evaluation ── */}
       <h2 className="tw-mb-6 tw-text-2xl tw-font-bold tw-text-gray-800">
-        Admin — Import Evaluation
+        Admin — Importer une évaluation
       </h2>
 
       <form onSubmit={handleSubmit}>
         {/* JSON file */}
         <div className="form-group tw-mb-4">
           <label className="form-control-label tw-font-semibold" htmlFor="json_file">
-            Source/target JSON file
+            Fichier JSON source/cible
           </label>
           <input
             ref={fileRef}
@@ -602,18 +602,18 @@ export default function AdminPage() {
           />
           {pairs && (
             <p className="tw-mt-1 tw-text-sm tw-text-green-600">
-              {pairs.length} segments loaded from {fileName}
+              {pairs.length} segments chargés depuis {fileName}
             </p>
           )}
           <p className="tw-mt-1 tw-text-sm tw-text-gray-500">
-            Expected format: <code>[{"{"}  "source": "...", "target": "..." {"}"}]</code>
+            Format attendu : <code>[{"{"}  "source": "...", "target": "..." {"}"}]</code>
           </p>
         </div>
 
         {/* Evaluation name */}
         <div className="form-group tw-mb-4">
           <label className="form-control-label tw-font-semibold" htmlFor="evaluation_name">
-            Evaluation name
+            Nom de l'évaluation
           </label>
           <input
             className="form-control form-control-lg tw-mt-1"
@@ -629,7 +629,7 @@ export default function AdminPage() {
         {/* System name */}
         <div className="form-group tw-mb-4">
           <label className="form-control-label tw-font-semibold" htmlFor="system_name">
-            MT system name
+            Nom du système de TA
           </label>
           <input
             className="form-control form-control-lg tw-mt-1"
@@ -645,10 +645,10 @@ export default function AdminPage() {
         {/* User selection */}
         <div className="form-group tw-mb-6">
           <label className="form-control-label tw-font-semibold">
-            Assign to annotators
+            Assigner aux annotateurs
           </label>
           {users.length === 0 ? (
-            <p className="tw-mt-1 tw-text-sm tw-text-gray-500">No users found.</p>
+            <p className="tw-mt-1 tw-text-sm tw-text-gray-500">Aucun utilisateur trouvé.</p>
           ) : (
             <div className="tw-mt-2 tw-flex tw-flex-col tw-gap-2">
               {users.map((user) => (
@@ -671,7 +671,7 @@ export default function AdminPage() {
           disabled={isSubmitting}
           type="submit"
         >
-          {isSubmitting ? "Importing…" : "Import"}
+          {isSubmitting ? "Import en cours…" : "Importer"}
         </button>
       </form>
     </div>

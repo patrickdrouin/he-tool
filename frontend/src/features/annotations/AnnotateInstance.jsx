@@ -75,7 +75,7 @@ export default function AnnotateInstance({
       onSuccess: () => {},
       onError: (error) => {
         toast.error(
-          `Failed to update annotation: ${error}. Please check your connection and try again.`,
+          `Échec de la mise à jour de l'annotation : ${error}. Veuillez vérifier votre connexion et réessayer.`,
         );
       },
       onSettled: () => {
@@ -104,22 +104,22 @@ export default function AnnotateInstance({
     <div className="container">
       <div className="tw-mb-6 tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
         <div>
-          <b>Evaluation:</b>&nbsp;{annotation["evaluation"]["name"]}
+          <b>Évaluation :</b>&nbsp;{annotation["evaluation"]["name"]}
         </div>
         <div className="tw-flex tw-items-center tw-gap-4">
           <span className="tw-space-x-4">
-            <b>Task:</b>&nbsp;{currentIndex + 1}&nbsp;/&nbsp;{total}
-            <b>Done:</b>&nbsp;{done}
+            <b>Tâche :</b>&nbsp;{currentIndex + 1}&nbsp;/&nbsp;{total}
+            <b>Terminé :</b>&nbsp;{done}
           </span>
           {isAnnotated ? (
             <div className="tw-flex tw-items-center tw-gap-2">
-              <span className="tw-text-green-700 tw-font-semibold tw-text-sm">&#10003; Done</span>
+              <span className="tw-text-green-700 tw-font-semibold tw-text-sm">&#10003; Terminé</span>
               <button
                 className="btn btn-sm btn-outline-secondary"
                 disabled={isAnnotationUpdating}
                 onClick={handleUnlock}
               >
-                {isAnnotationUpdating ? <SpinnerMini /> : "Unlock"}
+                {isAnnotationUpdating ? <SpinnerMini /> : "Déverrouiller"}
               </button>
             </div>
           ) : !confirmingFinish ? (
@@ -128,24 +128,24 @@ export default function AnnotateInstance({
               disabled={isAnnotationUpdating}
               onClick={() => setConfirmingFinish(true)}
             >
-              {isAnnotationUpdating ? <SpinnerMini /> : "Done"}
+              {isAnnotationUpdating ? <SpinnerMini /> : "Terminé"}
             </button>
           ) : (
             <div className="tw-flex tw-items-center tw-gap-2 tw-text-sm">
-              <span className="tw-font-semibold">All errors annotated?</span>
+              <span className="tw-font-semibold">Toutes les erreurs ont été annotées ?</span>
               <button
                 className="btn btn-sm btn-primary"
                 disabled={isAnnotationUpdating}
                 onClick={handleFinish}
               >
-                {isAnnotationUpdating ? <SpinnerMini /> : "Yes"}
+                {isAnnotationUpdating ? <SpinnerMini /> : "Oui"}
               </button>
               <button
                 className="btn btn-sm btn-secondary"
                 disabled={isAnnotationUpdating}
                 onClick={() => setConfirmingFinish(false)}
               >
-                No
+                Non
               </button>
             </div>
           )}
@@ -154,8 +154,7 @@ export default function AnnotateInstance({
       <div className="row">
         <div className="col alert alert-warning text-center">
           <h5>
-            Please select and right-click to highlight incorrect spans in the
-            translated sentences below.
+            Sélectionnez et faites un clic droit pour surligner les segments incorrects dans les phrases traduites ci-dessous.
           </h5>
         </div>
       </div>
@@ -185,14 +184,14 @@ export default function AnnotateInstance({
             })}
             {documentBitexts.length > 1 ? (
               <div className="card">
-                <div className="card-header">Document Context</div>
+                <div className="card-header">Contexte du document</div>
                 <div className="card-body">
                   <table className="table">
                     <thead>
                       <tr>
                         <th>#</th>
                         <th>Source</th>
-                        <th>Translation</th>
+                        <th>Traduction</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -203,8 +202,8 @@ export default function AnnotateInstance({
                           <tr
                             key={bitext["id"]}
                             className={[
-                              "tw-border-b tw-border-t tw-border-solid tw-cursor-pointer",
-                              isDone ? "tw-bg-green-50" : isActive ? "tw-bg-green-200" : "hover:tw-bg-gray-50",
+                              "tw-cursor-pointer",
+                              isDone ? "table-success" : isActive ? "table-active" : "",
                             ].join(" ")}
                             onClick={() => onNavigateToBitext && onNavigateToBitext(bitext["id"])}
                           >

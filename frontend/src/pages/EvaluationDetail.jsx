@@ -62,7 +62,7 @@ export default function EvaluationDetailPage() {
       },
       onError: (error) => {
         toast.error(
-          `Failed to update annotation: ${error}. Please check your connection and try again.`,
+          `Échec de la mise à jour de l'annotation : ${error}. Veuillez vérifier votre connexion et réessayer.`,
         );
       },
       onSettled: () => {
@@ -115,10 +115,10 @@ export default function EvaluationDetailPage() {
                           Source
                         </th>
                         <th scope="col" className="tw-px-6 tw-py-3">
-                          Reference
+                          Référence
                         </th>
                         <th scope="col" className="tw-px-6 tw-py-3">
-                          Finished?
+                          Terminé ?
                         </th>
                       </tr>
                     </thead>

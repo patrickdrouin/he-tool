@@ -60,7 +60,7 @@ function IaaSection({ evaluationId }) {
   if (annotators.length < 2) {
     return (
       <p className="tw-text-sm tw-text-gray-500 tw-mt-2">
-        At least two annotators are needed to compute agreement.
+        Au moins deux annotateurs sont nécessaires pour calculer l'accord.
       </p>
     );
   }
@@ -68,19 +68,19 @@ function IaaSection({ evaluationId }) {
   return (
     <div className="tw-mt-6">
       <h2 className="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-3">
-        Inter-Annotator Agreement
+        Accord inter-annotateurs
       </h2>
       <p className="tw-text-sm tw-text-gray-500 tw-mb-4">
-        MQM scores per segment (minor&nbsp;=&nbsp;1, major&nbsp;=&nbsp;5, critical&nbsp;=&nbsp;25).
-        Pearson&nbsp;<em>r</em> and Spearman&nbsp;<em>ρ</em> measure score-level correlation between annotator pairs.
+        Scores MQM par segment (mineure&nbsp;=&nbsp;1, majeure&nbsp;=&nbsp;5, critique&nbsp;=&nbsp;25).
+        Pearson&nbsp;<em>r</em> et Spearman&nbsp;<em>ρ</em> mesurent la corrélation des scores entre paires d'annotateurs.
       </p>
 
       {/* Correlation summary */}
       <table className="table tw-mb-6 tw-text-sm">
         <thead>
           <tr>
-            <th>Annotator A</th>
-            <th>Annotator B</th>
+            <th>Annotateur A</th>
+            <th>Annotateur B</th>
             <th>Segments</th>
             <th>Pearson <em>r</em></th>
             <th>Spearman <em>ρ</em></th>
@@ -102,7 +102,7 @@ function IaaSection({ evaluationId }) {
       {/* Per-segment scores */}
       <details>
         <summary className="tw-cursor-pointer tw-font-semibold tw-text-gray-700 tw-mb-2">
-          Per-segment scores
+          Scores par segment
         </summary>
         <div className="tw-overflow-x-auto tw-mt-2">
           <table className="table tw-text-sm">
@@ -164,7 +164,7 @@ export default function ResultsPage() {
   return (
     <div className="tw-m-4">
       <div className="tw-flex tw-flex-row tw-items-center tw-gap-4 tw-flex-wrap">
-        <h1 className="tw-text-lg tw-font-bold">Evaluation:</h1>
+        <h1 className="tw-text-lg tw-font-bold">Évaluation :</h1>
         <select
           value={evaluationIndex}
           onChange={(e) => setEvaluationIndex(Number(e.target.value))}
@@ -185,7 +185,7 @@ export default function ResultsPage() {
                 )
               }
             >
-              Download TSV
+              Télécharger TSV
             </button>
           )}
           {evaluationId && (
@@ -206,7 +206,7 @@ export default function ResultsPage() {
                 }
               }}
             >
-              {isExportingXml ? "Exporting…" : "Download XML"}
+              {isExportingXml ? "Export en cours…" : "Télécharger XML"}
             </button>
           )}
         </div>
@@ -219,6 +219,7 @@ export default function ResultsPage() {
       <hr className="tw-mt-6" />
 
       <h2 className="tw-text-xl tw-font-bold tw-text-gray-800 tw-my-3">Annotations</h2>
+
       <div id="mqm"></div>
     </div>
   );

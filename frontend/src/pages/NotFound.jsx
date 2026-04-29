@@ -26,17 +26,16 @@ export default function NotFoundPage() {
     <div className="col-xs-1 text-center">
       <h1 className="tw-text-7xl tw-text-blue-700">404</h1>
       <p className="tw-mb-2 tw-text-xl tw-text-gray-700">
-        Something's missing.
+        Page introuvable.
       </p>
       <p className="tw-mb-2">
-        Sorry, we can't find that page. You'll find lots to explore on the home
-        page.
+        Désolé, nous n'avons pas trouvé cette page. Retournez à la page d'accueil.
       </p>
       <Link
         className="tw-font-semibold tw-text-blue-500 hover:tw-text-blue-600 hover:tw-underline"
         to="/"
       >
-        Back to Homepage
+        Retour à l'accueil
       </Link>
     </div>
   );

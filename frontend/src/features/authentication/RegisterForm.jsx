@@ -38,14 +38,14 @@ export default function RegisterForm() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+      toast.error("Les mots de passe ne correspondent pas.");
       return;
     }
 
     setIsLoading(true);
     try {
       await register({ email, password, nativeLanguage });
-      toast.success("Account created. You can now log in.");
+      toast.success("Compte créé. Vous pouvez maintenant vous connecter.");
       navigate("/login");
     } catch (err) {
       toast.error(err.message);
@@ -57,10 +57,10 @@ export default function RegisterForm() {
   return (
     <form method="POST" onSubmit={handleSubmit}>
       <fieldset className="form-group">
-        <legend className="border-bottom mb-4">Sign Up</legend>
+        <legend className="border-bottom mb-4">Inscription</legend>
         <div className="form-group tw-my-2">
           <label className="form-control-label" htmlFor="email">
-            Email
+            Courriel
           </label>
           <input
             className="form-control form-control-lg"
@@ -75,7 +75,7 @@ export default function RegisterForm() {
         </div>
         <div className="form-group tw-my-2">
           <label className="form-control-label" htmlFor="password">
-            Password
+            Mot de passe
           </label>
           <input
             className="form-control form-control-lg"
@@ -90,7 +90,7 @@ export default function RegisterForm() {
         </div>
         <div className="form-group tw-my-2">
           <label className="form-control-label" htmlFor="confirm_password">
-            Confirm Password
+            Confirmer le mot de passe
           </label>
           <input
             className="form-control form-control-lg"
@@ -105,7 +105,7 @@ export default function RegisterForm() {
         </div>
         <div className="form-group tw-my-2">
           <label className="form-control-label" htmlFor="native_language">
-            Native Language
+            Langue maternelle
           </label>
           <LanguageSelector
             className="form-control form-control-lg"
@@ -120,7 +120,7 @@ export default function RegisterForm() {
       </fieldset>
       <div className="form-group tw-mt-2 tw-flex tw-items-center tw-justify-between">
         <Link className="tw-text-sm" to="/login">
-          Already have an account? Log in
+          Déjà un compte ? Se connecter
         </Link>
         <input
           className="btn btn-outline-info"
@@ -128,7 +128,7 @@ export default function RegisterForm() {
           id="submit"
           name="submit"
           type="submit"
-          value="Register"
+          value="S'inscrire"
         />
       </div>
     </form>

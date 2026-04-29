@@ -38,10 +38,10 @@ export default function LoginForm() {
   return (
     <form method="POST" onSubmit={handleSubmit}>
       <fieldset className="form-group">
-        <legend className="border-bottom mb-4">Log In</legend>
+        <legend className="border-bottom mb-4">Connexion</legend>
         <div className="form-group tw-my-2">
           <label className="form-control-label" htmlFor="email">
-            Email
+            Courriel
           </label>
           <input
             className="form-control form-control-lg"
@@ -56,7 +56,7 @@ export default function LoginForm() {
         </div>
         <div className="form-group tw-my-2">
           <label className="form-control-label" htmlFor="password">
-            Password
+            Mot de passe
           </label>
           <input
             className="form-control form-control-lg"
@@ -80,17 +80,17 @@ export default function LoginForm() {
             value={remember}
           />
           <label className="form-check-label" htmlFor="remember">
-            Remember Me
+            Se souvenir de moi
           </label>
         </div>
       </fieldset>
       <div className="form-group tw-mt-2 tw-flex tw-items-center tw-justify-between">
         <div className="tw-flex tw-flex-col tw-gap-1">
           <Link className="tw-text-sm" to="/register">
-            Don't have an account? Sign up
+            Pas encore de compte ? Créer un compte
           </Link>
           <Link className="tw-text-sm" to="/change-password">
-            Change password
+            Changer le mot de passe
           </Link>
         </div>
         <input
@@ -99,7 +99,7 @@ export default function LoginForm() {
           id="submit"
           name="submit"
           type="submit"
-          value="Login"
+          value="Se connecter"
         />
       </div>
     </form>

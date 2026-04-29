@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getProgress } from "../services/apiAdmin";
 
 function ProgressBar({ done, inProgress, total }) {
-  if (total === 0) return <span className="tw-text-sm tw-text-gray-400">No tasks</span>;
+  if (total === 0) return <span className="tw-text-sm tw-text-gray-400">Aucune tâche</span>;
   const donePct = Math.round((done / total) * 100);
   const inProgPct = Math.round((inProgress / total) * 100);
   return (
@@ -11,28 +11,28 @@ function ProgressBar({ done, inProgress, total }) {
         <div
           className="progress-bar bg-success"
           style={{ width: `${donePct}%` }}
-          title={`Done: ${done}`}
+          title={`Terminé : ${done}`}
         />
         <div
           className="progress-bar bg-warning"
           style={{ width: `${inProgPct}%` }}
-          title={`In progress: ${inProgress}`}
+          title={`En cours : ${inProgress}`}
         />
       </div>
       <div className="tw-flex tw-gap-4 tw-text-xs tw-text-gray-600">
         <span className="tw-flex tw-items-center tw-gap-1">
           <span className="tw-inline-block tw-w-3 tw-h-3 tw-rounded-sm tw-bg-green-600" />
-          Done: {done}
+          Terminé : {done}
         </span>
         <span className="tw-flex tw-items-center tw-gap-1">
           <span className="tw-inline-block tw-w-3 tw-h-3 tw-rounded-sm tw-bg-yellow-400" />
-          In progress: {inProgress}
+          En cours : {inProgress}
         </span>
         <span className="tw-flex tw-items-center tw-gap-1">
           <span className="tw-inline-block tw-w-3 tw-h-3 tw-rounded-sm tw-bg-gray-300" />
-          Not started: {total - done - inProgress}
+          Non commencé : {total - done - inProgress}
         </span>
-        <span className="tw-ml-auto tw-font-semibold">{donePct}% complete</span>
+        <span className="tw-ml-auto tw-font-semibold">{donePct}% complet</span>
       </div>
     </div>
   );
@@ -55,9 +55,9 @@ export default function AnnotatorProgress() {
     setExpanded((prev) => ({ ...prev, [userId]: !prev[userId] }));
   }
 
-  if (loading) return <p className="tw-text-sm tw-text-gray-500">Loading progress…</p>;
-  if (error) return <p className="tw-text-sm tw-text-red-500">Error: {error}</p>;
-  if (!data || data.length === 0) return <p className="tw-text-sm tw-text-gray-500">No annotation data yet.</p>;
+  if (loading) return <p className="tw-text-sm tw-text-gray-500">Chargement de la progression…</p>;
+  if (error) return <p className="tw-text-sm tw-text-red-500">Erreur : {error}</p>;
+  if (!data || data.length === 0) return <p className="tw-text-sm tw-text-gray-500">Pas encore de données d'annotation.</p>;
 
   return (
     <div className="tw-flex tw-flex-col tw-gap-4 tw-mb-10">
@@ -69,9 +69,9 @@ export default function AnnotatorProgress() {
           >
             <span className="tw-font-semibold">{user.email}</span>
             <span className="tw-text-sm tw-text-gray-500 tw-ml-4 tw-mr-auto">
-              {user.total_tasks} task{user.total_tasks !== 1 ? "s" : ""} across {user.evaluations.length} evaluation{user.evaluations.length !== 1 ? "s" : ""}
+              {user.total_tasks} tâche{user.total_tasks !== 1 ? "s" : ""} sur {user.evaluations.length} évaluation{user.evaluations.length !== 1 ? "s" : ""}
             </span>
-            <span className="tw-text-xs tw-text-gray-400">{expanded[user.user_id] ? "▲ collapse" : "▼ expand"}</span>
+            <span className="tw-text-xs tw-text-gray-400">{expanded[user.user_id] ? "▲ réduire" : "▼ développer"}</span>
           </div>
           <div className="card-body tw-pb-3">
             <ProgressBar
@@ -85,10 +85,10 @@ export default function AnnotatorProgress() {
               <table className="table tw-mb-0 tw-text-sm">
                 <thead>
                   <tr>
-                    <th>Evaluation</th>
-                    <th style={{ minWidth: "260px" }}>Progress</th>
-                    <th className="tw-text-right">Done</th>
-                    <th className="tw-text-right">In progress</th>
+                    <th>Évaluation</th>
+                    <th style={{ minWidth: "260px" }}>Progression</th>
+                    <th className="tw-text-right">Terminé</th>
+                    <th className="tw-text-right">En cours</th>
                     <th className="tw-text-right">Total</th>
                   </tr>
                 </thead>

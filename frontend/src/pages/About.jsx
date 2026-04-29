@@ -24,7 +24,7 @@ export default function AboutPage() {
     <div>
       <h1 className="tw-text-4xl tw-font-bold">Instructions</h1>
       <div className="row tw-mt-2">
-        <div className="col">...instructions go here...</div>
+        <div className="col">...les instructions seront ajoutées ici...</div>
       </div>
       <div className="row"></div>
     </div>

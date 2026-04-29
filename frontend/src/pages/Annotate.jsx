@@ -55,8 +55,8 @@ export default function AnnotatePage() {
     return (
       <div className="container">
         <div className="tw-flex tw-flex-col tw-items-center tw-mt-12">
-          <h1 className="tw-mb-4 tw-text-3xl tw-font-bold">No tasks assigned</h1>
-          <p className="tw-text-lg">Ask your admin to assign an evaluation to you.</p>
+          <h1 className="tw-mb-4 tw-text-3xl tw-font-bold">Aucune tâche assignée</h1>
+          <p className="tw-text-lg">Demandez à votre administrateur de vous assigner une évaluation.</p>
         </div>
       </div>
     );
@@ -74,20 +74,20 @@ export default function AnnotatePage() {
                 disabled={currentAnnotation === 0}
                 onClick={() => setCurrentAnnotation(clamp(currentAnnotation - 1, 0, total - 1))}
               >
-                &larr; Previous
+                &larr; Précédent
               </button>
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={() => setSideBySide((v) => !v)}
               >
-                {sideBySide ? "Stacked view" : "Side-by-side view"}
+                {sideBySide ? "Vue empilée" : "Vue côte à côte"}
               </button>
               <button
                 className="btn btn-outline-secondary btn-sm"
                 disabled={currentAnnotation >= total - 1}
                 onClick={() => setCurrentAnnotation(clamp(currentAnnotation + 1, 0, total - 1))}
               >
-                Next &rarr;
+                Suivant &rarr;
               </button>
             </div>
 

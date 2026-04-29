@@ -167,7 +167,7 @@ export default function MarkingPopup({
         <textarea
           className="form-control tw-text-sm tw-mt-1"
           disabled={marking ? !marking.id || disabled : disabled}
-          placeholder="Comment (optional)"
+          placeholder="Commentaire (optionnel)"
           rows={2}
           style={{ minWidth: "220px" }}
           value={comment}

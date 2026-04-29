@@ -33,7 +33,7 @@ export default function NavigationBar() {
       <nav className="navbar navbar-expand-md navbar-dark bg-dark">
         <div className="container">
           <Link className="navbar-brand mr-4" to="/">
-            Human Evaluation Tool
+            Outil d'évaluation humaine
           </Link>
           <button
             className="navbar-toggler"
@@ -52,12 +52,12 @@ export default function NavigationBar() {
                 <>
                   <div className="navbar-nav mr-auto">
                     <Link className="nav-item nav-link" to="/about">
-                      About
+                      À propos
                     </Link>
                   </div>
                   <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/login">
-                      Login
+                      Connexion
                     </Link>
                   </div>
                 </>
@@ -65,29 +65,29 @@ export default function NavigationBar() {
                 <>
                   <div className="navbar-nav mr-auto">
                     <Link className="nav-item nav-link" to="/about">
-                      About
+                      À propos
                     </Link>
                   </div>
                   <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/help">
-                      Help
+                      Aide
                     </Link>
                   </div>
                   <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/evaluations">
-                      Evaluations
+                      Évaluations
                     </Link>
                   </div>
                   <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/annotate">
-                      Annotate
+                      Annoter
                     </Link>
                   </div>
                   {isAdmin && (
                     <>
                       <div className="navbar-nav">
                         <Link className="nav-item nav-link" to="/results">
-                          Results
+                          Résultats
                         </Link>
                       </div>
                       <div className="navbar-nav">
@@ -99,7 +99,7 @@ export default function NavigationBar() {
                   )}
                   <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/profile">
-                      Account
+                      Mon compte
                     </Link>
                   </div>
                   <div className="navbar-nav">
@@ -108,7 +108,7 @@ export default function NavigationBar() {
                       disabled={isLogoutLoading}
                       onClick={logout}
                     >
-                      Logout
+                      Déconnexion
                     </button>
                   </div>
                 </>

@@ -44,11 +44,10 @@ export default function EvaluationsPage() {
               </div>
               <div className="tw-flex tw-flex-col tw-items-center">
                 <h1 className="tw-mb-4 tw-text-3xl tw-font-bold">
-                  You're all done!
+                  Tout est terminé !
                 </h1>
                 <p className="tw-mb-4 tw-text-lg">
-                  There are currently no ongoing evaluations. You can now close
-                  this page.
+                  Il n'y a actuellement aucune évaluation en cours. Vous pouvez fermer cette page.
                 </p>
               </div>
             </div>
@@ -62,7 +61,7 @@ export default function EvaluationsPage() {
     <div className="content">
       <div className="row"></div>
       <h3 className="tw-mb-4 tw-text-2xl tw-text-gray-700">
-        Ongoing Evaluations
+        Évaluations en cours
       </h3>
       <ul className="tw-ml-10 tw-list-item tw-list-disc">
         {evaluations

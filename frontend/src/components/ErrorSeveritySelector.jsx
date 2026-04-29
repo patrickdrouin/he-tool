@@ -28,19 +28,19 @@ export default function ErrorSeveritySelector(props) {
       value={props.value}
     >
       <option id="critical" value="critical">
-        Critical
+        Critique
       </option>
       <option id="major" value="major">
-        Major
+        Majeure
       </option>
       <option id="minor" value="minor">
-        Minor
+        Mineure
       </option>
       <option id="not-judgeable" value="not-judgeable">
-        Not Judgeable
+        Non évaluable
       </option>
       <option id="no-error" value="no-error">
-        None
+        Aucune
       </option>
     </select>
   );
