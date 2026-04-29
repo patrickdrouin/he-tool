@@ -19,7 +19,7 @@
  * Written by Giovanni G. De Giacomo <giovanni@yaraku.com>, August 2023
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import ErrorCategorySelector from "./ErrorCategorySelector";
 import ErrorSeveritySelector from "./ErrorSeveritySelector";
@@ -55,9 +55,25 @@ export default function MarkingPopup({
   updateMarking,
 }) {
   const { x: parentX, y: parentY } = containerRef.getBoundingClientRect();
+  const popupRef = useRef(null);
   const [category, setCategory] = useState("000");
   const [severity, setSeverity] = useState("no-error");
   const [comment, setComment] = useState("");
+
+  // After each render, clamp the popup so it doesn't overflow the right or bottom
+  // edge of the viewport. useLayoutEffect runs before the browser paints, preventing flicker.
+  useLayoutEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const margin = 8;
+    if (rect.right > window.innerWidth - margin) {
+      el.style.left = `${Math.max(0, mouseX - parentX - rect.width - margin)}px`;
+    }
+    if (rect.bottom > window.innerHeight - margin) {
+      el.style.top = `${Math.max(0, mouseY - parentY - rect.height - margin)}px`;
+    }
+  }, [mouseX, mouseY]);
 
   useEffect(() => {
     if (marking) {
@@ -73,9 +89,10 @@ export default function MarkingPopup({
 
   return (
     <div
+      ref={popupRef}
       className="tw-absolute tw-z-[1002] tw-select-none tw-divide-y tw-divide-solid tw-rounded-md tw-bg-white tw-p-2 tw-shadow-card"
       style={{
-        left: `${mouseX - parentX + 160}px`,
+        left: `${mouseX - parentX + 8}px`,
         top: `${mouseY - parentY + 10}px`,
       }}
     >

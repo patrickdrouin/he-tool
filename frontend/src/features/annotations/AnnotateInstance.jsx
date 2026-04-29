@@ -190,7 +190,7 @@ export default function AnnotateInstance({
             <div className="tw-mt-6 tw-mb-4 tw-w-full">
               {isAnnotated ? (
                 <div className="alert alert-success tw-flex tw-items-center tw-justify-between tw-mb-0">
-                  <span className="tw-font-semibold">&#10003; Task marked as done</span>
+                  <span className="tw-font-semibold">&#10003; Done</span>
                   <button
                     className="btn btn-sm btn-outline-secondary"
                     disabled={isAnnotationUpdating}
@@ -203,7 +203,7 @@ export default function AnnotateInstance({
                 <>
                   {isLastTask && !confirmingFinish && (
                     <div className="alert alert-info tw-mb-3 tw-text-sm">
-                      This is your last unannotated task.
+                      This is your last unannotated segment.
                     </div>
                   )}
                   {!confirmingFinish ? (
@@ -215,13 +215,13 @@ export default function AnnotateInstance({
                       {isAnnotationUpdating ? (
                         <div className="tw-flex tw-justify-center"><SpinnerMini /></div>
                       ) : (
-                        "Mark task as done"
+                        "Done"
                       )}
                     </button>
                   ) : (
                     <div className="alert alert-warning tw-flex tw-flex-col tw-gap-3">
                       <p className="tw-mb-0 tw-font-semibold">
-                        Have you annotated all errors in this task?
+                        Have you annotated all errors in this segment?
                       </p>
                       <div className="tw-flex tw-gap-3">
                         <button
@@ -229,7 +229,7 @@ export default function AnnotateInstance({
                           disabled={isAnnotationUpdating}
                           onClick={handleFinish}
                         >
-                          {isAnnotationUpdating ? <SpinnerMini /> : "Yes, mark as done"}
+                          {isAnnotationUpdating ? <SpinnerMini /> : "Yes, done"}
                         </button>
                         <button
                           className="btn btn-secondary"
