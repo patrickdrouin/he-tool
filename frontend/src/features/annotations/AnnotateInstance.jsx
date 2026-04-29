@@ -124,7 +124,7 @@ export default function AnnotateInstance({
             </div>
           ) : !confirmingFinish ? (
             <button
-              className="btn btn-sm btn-success"
+              className="btn btn-sm btn-primary"
               disabled={isAnnotationUpdating}
               onClick={() => setConfirmingFinish(true)}
             >
@@ -134,7 +134,7 @@ export default function AnnotateInstance({
             <div className="tw-flex tw-items-center tw-gap-2 tw-text-sm">
               <span className="tw-font-semibold">All errors annotated?</span>
               <button
-                className="btn btn-sm btn-success"
+                className="btn btn-sm btn-primary"
                 disabled={isAnnotationUpdating}
                 onClick={handleFinish}
               >
@@ -204,7 +204,7 @@ export default function AnnotateInstance({
                             key={bitext["id"]}
                             className={[
                               "tw-border-b tw-border-t tw-border-solid tw-cursor-pointer",
-                              isDone ? "tw-bg-green-100" : isActive ? "tw-bg-blue-100" : "hover:tw-bg-gray-50",
+                              isDone ? "tw-bg-green-50" : isActive ? "tw-bg-green-200" : "hover:tw-bg-gray-50",
                             ].join(" ")}
                             onClick={() => onNavigateToBitext && onNavigateToBitext(bitext["id"])}
                           >
