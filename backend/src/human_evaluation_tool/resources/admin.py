@@ -24,7 +24,7 @@ from xml.etree import ElementTree as ET
 
 from flask import Blueprint, Response, jsonify, request
 from flask.typing import ResponseReturnValue
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -43,6 +43,17 @@ from ..utils import CATEGORY_NAME
 
 
 bp = Blueprint("admin", __name__)
+
+
+def _require_admin() -> tuple | None:
+    """Return a 403 response tuple if the current JWT user is not an admin, else None."""
+    identity = get_jwt_identity()
+    if identity is None:
+        return {"message": "Unauthorized"}, 403
+    user = db.session.get(User, int(identity))
+    if user is None or not user.isAdmin:
+        return {"message": "Admin access required"}, 403
+    return None
 
 
 @bp.post("/api/admin/import")
@@ -560,6 +571,9 @@ def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
     Each <annotation> lists its <translation> and any <marking> elements,
     where <span start="N" end="N"> gives the word-index range and text.
     """
+
+    if err := _require_admin():
+        return err
 
     evaluation = db.session.get(Evaluation, evaluation_id)
     if evaluation is None:
