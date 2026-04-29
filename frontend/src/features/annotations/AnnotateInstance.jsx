@@ -43,7 +43,6 @@ export default function AnnotateInstance({
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const isAnnotated = annotation["isAnnotated"];
-  const isLastTask = !isAnnotated && done === total - 1;
 
   useEffect(() => {
     setConfirmingFinish(false);
@@ -103,14 +102,53 @@ export default function AnnotateInstance({
 
   return (
     <div className="container">
-      <div className="tw-mb-6 tw-flex tw-justify-between">
+      <div className="tw-mb-6 tw-flex tw-justify-between tw-items-center tw-flex-wrap tw-gap-2">
         <div>
-          <b>Evaluation:</b>&nbsp;
-          {annotation["evaluation"]["name"]}
+          <b>Evaluation:</b>&nbsp;{annotation["evaluation"]["name"]}
         </div>
-        <div className="tw-space-x-6">
-          <b>Task:</b>&nbsp;{currentIndex + 1}&nbsp;/&nbsp;{total}
-          <b>Done:</b>&nbsp;{done}
+        <div className="tw-flex tw-items-center tw-gap-4">
+          <span className="tw-space-x-4">
+            <b>Task:</b>&nbsp;{currentIndex + 1}&nbsp;/&nbsp;{total}
+            <b>Done:</b>&nbsp;{done}
+          </span>
+          {isAnnotated ? (
+            <div className="tw-flex tw-items-center tw-gap-2">
+              <span className="tw-text-green-700 tw-font-semibold tw-text-sm">&#10003; Done</span>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                disabled={isAnnotationUpdating}
+                onClick={handleUnlock}
+              >
+                {isAnnotationUpdating ? <SpinnerMini /> : "Unlock"}
+              </button>
+            </div>
+          ) : !confirmingFinish ? (
+            <button
+              className="btn btn-sm btn-success"
+              disabled={isAnnotationUpdating}
+              onClick={() => setConfirmingFinish(true)}
+            >
+              {isAnnotationUpdating ? <SpinnerMini /> : "Done"}
+            </button>
+          ) : (
+            <div className="tw-flex tw-items-center tw-gap-2 tw-text-sm">
+              <span className="tw-font-semibold">All errors annotated?</span>
+              <button
+                className="btn btn-sm btn-success"
+                disabled={isAnnotationUpdating}
+                onClick={handleFinish}
+              >
+                {isAnnotationUpdating ? <SpinnerMini /> : "Yes"}
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                disabled={isAnnotationUpdating}
+                onClick={() => setConfirmingFinish(false)}
+              >
+                No
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div className="row">
@@ -188,64 +226,6 @@ export default function AnnotateInstance({
               </div>
             ) : null}
 
-            {/* ── Finish / Unlock button ── */}
-            <div className="tw-mt-6 tw-mb-4 tw-w-full">
-              {isAnnotated ? (
-                <div className="alert alert-success tw-flex tw-items-center tw-justify-between tw-mb-0">
-                  <span className="tw-font-semibold">&#10003; Done</span>
-                  <button
-                    className="btn btn-sm btn-outline-secondary"
-                    disabled={isAnnotationUpdating}
-                    onClick={handleUnlock}
-                  >
-                    {isAnnotationUpdating ? <SpinnerMini /> : "Unlock to continue annotation"}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  {isLastTask && !confirmingFinish && (
-                    <div className="alert alert-info tw-mb-3 tw-text-sm">
-                      This is your last unannotated segment.
-                    </div>
-                  )}
-                  {!confirmingFinish ? (
-                    <button
-                      className="btn btn-primary tw-w-full"
-                      disabled={isAnnotationUpdating}
-                      onClick={() => setConfirmingFinish(true)}
-                    >
-                      {isAnnotationUpdating ? (
-                        <div className="tw-flex tw-justify-center"><SpinnerMini /></div>
-                      ) : (
-                        "Done"
-                      )}
-                    </button>
-                  ) : (
-                    <div className="alert alert-warning tw-flex tw-flex-col tw-gap-3">
-                      <p className="tw-mb-0 tw-font-semibold">
-                        Have you annotated all errors in this segment?
-                      </p>
-                      <div className="tw-flex tw-gap-3">
-                        <button
-                          className="btn btn-primary"
-                          disabled={isAnnotationUpdating}
-                          onClick={handleFinish}
-                        >
-                          {isAnnotationUpdating ? <SpinnerMini /> : "Yes, done"}
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          disabled={isAnnotationUpdating}
-                          onClick={() => setConfirmingFinish(false)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
           </div>
         </div>
       </div>
