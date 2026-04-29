@@ -98,6 +98,7 @@ export default function AnnotatePage() {
               done={done}
               total={total}
               sideBySide={sideBySide}
+              doneBitextIds={new Set(sortedAnnotations.filter((a) => a["isAnnotated"]).map((a) => a["bitext"]["id"]))}
               onNavigateToBitext={(bitextId) => {
                 const idx = sortedAnnotations.findIndex((a) => a["bitext"]["id"] === bitextId);
                 if (idx !== -1) setCurrentAnnotation(idx);

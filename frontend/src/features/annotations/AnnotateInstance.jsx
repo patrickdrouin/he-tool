@@ -38,6 +38,7 @@ export default function AnnotateInstance({
   done,
   total,
   sideBySide,
+  doneBitextIds = new Set(),
   onNavigateToBitext,
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
@@ -159,12 +160,13 @@ export default function AnnotateInstance({
                     <tbody>
                       {documentBitexts.map((bitext, rowIndex) => {
                         const isActive = bitext["id"] === annotation["bitext"]["id"];
+                        const isDone = doneBitextIds.has(bitext["id"]);
                         return (
                           <tr
                             key={bitext["id"]}
                             className={[
                               "tw-border-b tw-border-t tw-border-solid tw-cursor-pointer",
-                              isActive ? "tw-bg-green-100" : "hover:tw-bg-gray-50",
+                              isActive ? "tw-bg-green-200" : isDone ? "tw-bg-green-50" : "hover:tw-bg-gray-50",
                             ].join(" ")}
                             onClick={() => onNavigateToBitext && onNavigateToBitext(bitext["id"])}
                           >
