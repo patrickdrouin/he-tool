@@ -274,7 +274,7 @@ export default function MarkingItem({
     >
       {text.trim().replace(/\s+/g, " ").split(" ").map((word, wordIndex) => (
         <Fragment key={wordIndex}>
-          {wordIndex > 0 && <span className="tw-select-none"> </span>}
+          {wordIndex > 0 && " "}
           <span
             id={wordIndex}
             className={getClassByIndex(wordIndex)}

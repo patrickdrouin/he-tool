@@ -311,18 +311,6 @@ export default function HelpPage() {
 
       </section>
 
-      {/* ── 7. Tips ── */}
-      <section className="tw-mb-6">
-        <h2 className="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-3">7. Conseils pratiques</h2>
-        <ul className="tw-list-disc tw-list-inside tw-space-y-2 tw-text-gray-700">
-          <li><strong>Pavé tactile Mac :</strong> tapotez avec deux doigts = clic droit.</li>
-          <li><strong>Une erreur par segment :</strong> si deux erreurs se chevauchent sur les mêmes mots, annotez la plus importante.</li>
-          <li><strong>Erreurs de source :</strong> si la phrase source elle-même est incorrecte ou ambiguë, utilisez la catégorie SE1 sur le segment TA affecté et marquez-le <em>Non évaluable</em>.</li>
-          <li><strong>La traduction de référence</strong> est affichée sous la sortie TA à titre indicatif — ce n'est pas la vérité absolue, juste une référence humaine.</li>
-          <li><strong>Le contexte du document</strong> (si affiché) vous permet de voir les segments environnants pour lever les ambiguïtés.</li>
-          <li>Vous pouvez changer votre mot de passe à tout moment via le lien <strong>Mon compte</strong> dans la barre de navigation.</li>
-        </ul>
-      </section>
     </div>
   );
 }

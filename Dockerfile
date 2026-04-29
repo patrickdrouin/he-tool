@@ -39,8 +39,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PIP_DEFAULT_TIMEOUT=500
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
-RUN apt update                                            \
-    && apt install -y --no-install-recommends --fix-missing build-essential libpq-dev
 RUN pip install "poetry${POETRY_VERSION_CONSTRAINT}"
 
 # 2. Set working directory and copy files to container

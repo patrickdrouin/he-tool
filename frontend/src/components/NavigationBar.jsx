@@ -33,7 +33,7 @@ export default function NavigationBar() {
       <nav className="navbar navbar-expand-md navbar-dark bg-dark">
         <div className="container">
           <Link className="navbar-brand mr-4" to="/">
-            Outil d'évaluation humaine
+            HE Tool
           </Link>
           <button
             className="navbar-toggler"
@@ -50,11 +50,6 @@ export default function NavigationBar() {
             {!isAuthenticationLoading ? (
               !isAuthenticated ? (
                 <>
-                  <div className="navbar-nav mr-auto">
-                    <Link className="nav-item nav-link" to="/about">
-                      À propos
-                    </Link>
-                  </div>
                   <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/login">
                       Connexion
@@ -64,11 +59,6 @@ export default function NavigationBar() {
               ) : (
                 <>
                   <div className="navbar-nav mr-auto">
-                    <Link className="nav-item nav-link" to="/about">
-                      À propos
-                    </Link>
-                  </div>
-                  <div className="navbar-nav">
                     <Link className="nav-item nav-link" to="/help">
                       Aide
                     </Link>
