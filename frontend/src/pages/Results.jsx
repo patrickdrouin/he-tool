@@ -21,10 +21,12 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
 import { useEvaluations } from "../features/evaluations/useEvaluations";
 import { getEvaluationIaa, getEvaluationResults } from "../services/apiEvaluations";
+import { exportEvaluationXml } from "../services/apiAdmin";
 
 import "../assets/viewer.css";
 
@@ -131,6 +133,7 @@ function IaaSection({ evaluationId }) {
 
 export default function ResultsPage() {
   const [evaluationIndex, setEvaluationIndex] = useState(0);
+  const [isExportingXml, setIsExportingXml] = useState(false);
 
   const { evaluations, isLoading: areEvaluationsLoading } = useEvaluations();
   const evaluationId = evaluations?.[evaluationIndex]?.["id"];
@@ -171,19 +174,42 @@ export default function ResultsPage() {
             <option key={evaluation["id"]} value={index}>{evaluation["name"]}</option>
           ))}
         </select>
-        {evaluationResults && evaluationResults.length > 0 && (
-          <button
-            className="btn btn-secondary tw-ml-auto"
-            onClick={() =>
-              downloadTsv(
-                evaluationResults,
-                `${evaluationName.replace(/\s+/g, "_")}_results.tsv`
-              )
-            }
-          >
-            Download TSV
-          </button>
-        )}
+        <div className="tw-ml-auto tw-flex tw-gap-2">
+          {evaluationResults && evaluationResults.length > 0 && (
+            <button
+              className="btn btn-secondary"
+              onClick={() =>
+                downloadTsv(
+                  evaluationResults,
+                  `${evaluationName.replace(/\s+/g, "_")}_results.tsv`
+                )
+              }
+            >
+              Download TSV
+            </button>
+          )}
+          {evaluationId && (
+            <button
+              className="btn btn-secondary"
+              disabled={isExportingXml}
+              onClick={async () => {
+                setIsExportingXml(true);
+                try {
+                  await exportEvaluationXml({
+                    evaluationId,
+                    filename: `${evaluationName.replace(/\s+/g, "_")}.xml`,
+                  });
+                } catch (err) {
+                  toast.error(err.message);
+                } finally {
+                  setIsExportingXml(false);
+                }
+              }}
+            >
+              {isExportingXml ? "Exporting…" : "Download XML"}
+            </button>
+          )}
+        </div>
       </div>
 
       <hr />

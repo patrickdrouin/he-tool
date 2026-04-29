@@ -20,8 +20,9 @@ Human Evaluation Tool. If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 
 from datetime import datetime
+from xml.etree import ElementTree as ET
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func, select
@@ -38,6 +39,7 @@ from ..models import (
     System,
     User,
 )
+from ..utils import CATEGORY_NAME
 
 
 bp = Blueprint("admin", __name__)
@@ -547,3 +549,116 @@ def get_progress() -> ResponseReturnValue:
         })
 
     return jsonify(result), 200
+
+
+@bp.get("/api/admin/evaluations/<int:evaluation_id>/export/xml")
+@jwt_required()
+def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
+    """Export all annotations for an evaluation as an XML file.
+
+    Each <segment> contains one <annotation> per annotator/system pair.
+    Each <annotation> lists its <translation> and any <marking> elements,
+    where <span start="N" end="N"> gives the word-index range and text.
+    """
+
+    evaluation = db.session.get(Evaluation, evaluation_id)
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    annotations = (
+        db.session.execute(select(Annotation).filter_by(evaluationId=evaluation_id))
+        .scalars()
+        .all()
+    )
+
+    root = ET.Element(
+        "evaluation",
+        name=evaluation.name,
+        exported=datetime.now().isoformat(timespec="seconds"),
+    )
+
+    # Group by bitext so each segment appears once
+    bitext_map: dict[int, list[Annotation]] = {}
+    for ann in annotations:
+        bitext_map.setdefault(ann.bitextId, []).append(ann)
+
+    for bitext_id, anns in sorted(bitext_map.items()):
+        bitext = db.session.get(Bitext, bitext_id)
+        if bitext is None:
+            continue
+
+        source_words = bitext.source.strip().split()
+
+        seg_el = ET.SubElement(root, "segment", id=str(bitext_id))
+        src_el = ET.SubElement(seg_el, "source")
+        src_el.text = bitext.source
+
+        for ann in anns:
+            user = db.session.get(User, ann.userId)
+            annotator = user.email if user else str(ann.userId)
+
+            ann_systems = (
+                db.session.execute(
+                    select(AnnotationSystem).filter_by(annotationId=ann.id)
+                )
+                .scalars()
+                .all()
+            )
+
+            for ann_sys in ann_systems:
+                system = db.session.get(System, ann_sys.systemId)
+                system_name = system.name if system else str(ann_sys.systemId)
+
+                ann_el = ET.SubElement(
+                    seg_el,
+                    "annotation",
+                    annotator=annotator,
+                    system=system_name,
+                    completed="true" if ann.isAnnotated else "false",
+                )
+                if ann.comment:
+                    ann_el.set("comment", ann.comment)
+
+                trans_el = ET.SubElement(ann_el, "translation")
+                trans_el.text = ann_sys.translation or ""
+
+                translation_words = (ann_sys.translation or "").strip().split()
+
+                markings = (
+                    db.session.execute(
+                        select(Marking).filter_by(
+                            annotationId=ann.id, systemId=ann_sys.systemId
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+
+                for m in markings:
+                    words = source_words if m.isSource else translation_words
+                    span_text = " ".join(words[m.errorStart: m.errorEnd + 1])
+                    m_el = ET.SubElement(
+                        ann_el,
+                        "marking",
+                        severity=m.errorSeverity,
+                        category=CATEGORY_NAME.get(m.errorCategory, m.errorCategory),
+                        side="source" if m.isSource else "target",
+                    )
+                    if m.comment:
+                        m_el.set("comment", m.comment)
+                    span_el = ET.SubElement(
+                        m_el, "span", start=str(m.errorStart), end=str(m.errorEnd)
+                    )
+                    span_el.text = span_text
+
+    ET.indent(root)
+    xml_str = '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(
+        root, encoding="unicode"
+    )
+
+    safe_name = "".join(c if c.isalnum() or c in "-_." else "_" for c in evaluation.name)
+    return Response(
+        xml_str,
+        mimetype="text/xml; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}.xml"'},
+    )

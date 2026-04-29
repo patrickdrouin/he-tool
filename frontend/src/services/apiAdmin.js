@@ -104,6 +104,26 @@ export async function deleteEvaluation({ evaluationId }) {
   return data;
 }
 
+export async function exportEvaluationXml({ evaluationId, filename }) {
+  const response = await fetch(`/api/admin/evaluations/${evaluationId}/export/xml`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || `Export failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function importEvaluation({ evaluation, system, users, pairs }) {
   const response = await fetch("/api/admin/import", {
     method: "POST",
