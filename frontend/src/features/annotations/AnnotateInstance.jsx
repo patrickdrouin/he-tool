@@ -204,7 +204,7 @@ export default function AnnotateInstance({
                             key={bitext["id"]}
                             className={[
                               "tw-border-b tw-border-t tw-border-solid tw-cursor-pointer",
-                              isActive ? "tw-bg-green-200" : isDone ? "tw-bg-green-50" : "hover:tw-bg-gray-50",
+                              isDone ? "tw-bg-green-100" : isActive ? "tw-bg-blue-100" : "hover:tw-bg-gray-50",
                             ].join(" ")}
                             onClick={() => onNavigateToBitext && onNavigateToBitext(bitext["id"])}
                           >
