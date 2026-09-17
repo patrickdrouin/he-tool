@@ -73,7 +73,7 @@ export default function HelpPage() {
 
       {/* ── 5. Severity levels ── */}
       <section className="tw-mb-10">
-        <h2 className="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-3">5. Niveaux de gravité</h2>
+        <h2 id="severity" className="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-3">5. Niveaux de gravité</h2>
         <table className="table tw-text-sm">
           <thead>
             <tr>
@@ -114,7 +114,7 @@ export default function HelpPage() {
 
       {/* ── 6. Error categories ── */}
       <section className="tw-mb-10">
-        <h2 className="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-3">6. Catégories d'erreurs</h2>
+        <h2 id="categories" className="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-3">6. Catégories d'erreurs</h2>
 
         {/* Accuracy */}
         <div className="tw-mb-6">

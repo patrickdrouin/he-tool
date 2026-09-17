@@ -62,6 +62,18 @@ const SEVERITY_ORDER = ["critical", "major", "minor"];
 const SEVERITY_LABEL_FR = { critical: "Critique", major: "Majeure", minor: "Mineure" };
 const SEVERITY_WEIGHT = { critical: 3, major: 2, minor: 1, "not-judgeable": 0, "no-error": 0 };
 const SEVERITY_CSS_CLASS = { critical: "rd-badge-critical", major: "rd-badge-major", minor: "rd-badge-minor" };
+// Same wording as the "Niveaux de gravité" table on /help#severity, so the
+// two pages never drift apart on what a severity actually means.
+const SEVERITY_DEFINITION_FR = {
+  critical: "Erreur critique (poids 25) — dangereuse, trompeuse ou complètement fausse ; la sortie est inutilisable pour ce segment.",
+  major: "Erreur majeure (poids 5) — clairement incorrecte ; un lecteur le remarquerait et le sens est dégradé.",
+  minor: "Erreur mineure (poids 1) — légèrement maladroit mais le sens est préservé.",
+};
+
+const SCORE_AVG_DEFINITION =
+  "Moyenne, sur les segments concernés, de la somme des poids de sévérité de leurs erreurs (mineure=1, majeure=5, critique=25). Plus bas = meilleure traduction.";
+const SCORE_NORMALIZED_DEFINITION =
+  "Erreurs pondérées pour 100 mots de traduction — reste comparable même si les segments ou documents n'ont pas la même longueur.";
 
 const PAGE_SIZE = 40;
 
@@ -152,12 +164,27 @@ function BarList({ data, colorFor, emptyLabel }) {
   );
 }
 
+// Small "ⓘ" that shows a plain-language definition on hover — no JS tooltip
+// library, just the browser's native title attribute, so it works anywhere
+// without extra markup or a hover-state component per instance.
+function InfoTip({ text }) {
+  return (
+    <span className="rd-infotip" title={text} aria-label={text}>
+      ⓘ
+    </span>
+  );
+}
+
 function SeverityBadge({ severity }) {
   const label = SEVERITY_LABEL_FR[severity];
   if (!label) {
     return <span className="rd-badge rd-badge-source">{severity}</span>;
   }
-  return <span className={`rd-badge ${SEVERITY_CSS_CLASS[severity]}`}>{label}</span>;
+  return (
+    <span className={`rd-badge ${SEVERITY_CSS_CLASS[severity]}`} title={SEVERITY_DEFINITION_FR[severity]}>
+      {label}
+    </span>
+  );
 }
 
 function SortableTh({ label, sortKey, sort, onSort }) {
@@ -195,9 +222,18 @@ function IaaPanel({ evaluationId }) {
               <tr>
                 <th>Annotateur A</th>
                 <th>Annotateur B</th>
-                <th>Segments partagés</th>
-                <th>Pearson r</th>
-                <th>Spearman ρ</th>
+                <th>
+                  Segments partagés
+                  <InfoTip text="Nombre de segments annotés par les deux personnes, utilisés pour ce calcul." />
+                </th>
+                <th>
+                  Pearson r
+                  <InfoTip text="Corrélation linéaire entre les scores MQM des deux annotateur·ice·s sur les segments qu'ils/elles ont en commun. Proche de 1 = accord fort ; proche de 0 = aucun lien ; négatif = désaccord systématique." />
+                </th>
+                <th>
+                  Spearman ρ
+                  <InfoTip text="Comme Pearson r, mais basé sur le classement des segments plutôt que leur valeur exacte — moins sensible aux valeurs extrêmes." />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -284,7 +320,10 @@ function SeverityCalibration({ rows, annotators }) {
 
   return (
     <div className="rd-panel" style={{ marginBottom: "1.25rem" }}>
-      <div className="rd-panel-title">Calibration de sévérité</div>
+      <div className="rd-panel-title">
+        Calibration de sévérité
+        <Link className="rd-help-link" to="/help#severity">définitions des niveaux →</Link>
+      </div>
       <p className="rd-panel-subtitle">
         Comment chaque annotateur·ice répartit ses erreurs entre mineure, majeure et critique —
         utile pour repérer qui est systématiquement plus sévère ou plus indulgent·e que le groupe.
@@ -877,11 +916,17 @@ export default function ResultsDashboardPage() {
         <>
           <div className="rd-kpi-grid">
             <div className="rd-kpi-card">
-              <div className="rd-kpi-label">Segments</div>
+              <div className="rd-kpi-label">
+                Segments
+                <InfoTip text="Nombre de phrases distinctes (bi-textes) couvertes par cette évaluation." />
+              </div>
               <div className="rd-kpi-value">{data.segments.length}</div>
             </div>
             <div className="rd-kpi-card">
-              <div className="rd-kpi-label">Erreurs relevées</div>
+              <div className="rd-kpi-label">
+                Erreurs relevées
+                <InfoTip text="Nombre total de marquages d'erreur, tous annotateur·ice·s et systèmes confondus." />
+              </div>
               <div className="rd-kpi-value">{rows.length}</div>
               <div className="rd-kpi-sub">
                 {data.severityCounts.critical} critiques · {data.severityCounts.major} majeures ·{" "}
@@ -889,17 +934,29 @@ export default function ResultsDashboardPage() {
               </div>
             </div>
             <div className="rd-kpi-card">
-              <div className="rd-kpi-label">Score MQM moyen</div>
+              <div className="rd-kpi-label">
+                Score MQM moyen
+                <InfoTip text={SCORE_AVG_DEFINITION} />
+              </div>
               <div className="rd-kpi-value">{fmt(overallAvgScore)}</div>
-              <div className="rd-kpi-sub">par segment annoté (mineure=1, majeure=5, critique=25)</div>
+              <div className="rd-kpi-sub">
+                par segment annoté (mineure=1, majeure=5, critique=25){" "}
+                <Link className="rd-help-link" to="/help#severity">détails →</Link>
+              </div>
             </div>
             <div className="rd-kpi-card">
-              <div className="rd-kpi-label">Score normalisé</div>
+              <div className="rd-kpi-label">
+                Score normalisé
+                <InfoTip text={SCORE_NORMALIZED_DEFINITION} />
+              </div>
               <div className="rd-kpi-value">{fmt(overallNormalizedScore)}</div>
               <div className="rd-kpi-sub">erreurs pour 100 mots — comparable entre segments/documents</div>
             </div>
             <div className="rd-kpi-card">
-              <div className="rd-kpi-label">Annotateur·ice·s</div>
+              <div className="rd-kpi-label">
+                Annotateur·ice·s
+                <InfoTip text="Nombre de personnes ayant annoté au moins un segment de cette évaluation." />
+              </div>
               <div className="rd-kpi-value">{data.annotators.length}</div>
             </div>
           </div>
@@ -1004,6 +1061,9 @@ export default function ResultsDashboardPage() {
             <div className="rd-panel">
               <div className="rd-panel-title">
                 Erreurs par catégorie{filtersActive ? " (filtré)" : ""}
+                <Link className="rd-help-link" to="/help#categories">
+                  définitions des catégories →
+                </Link>
               </div>
               <BarList
                 data={categoryBarData}
@@ -1014,6 +1074,9 @@ export default function ResultsDashboardPage() {
             <div className="rd-panel">
               <div className="rd-panel-title">
                 Erreurs par sévérité{filtersActive ? " (filtré)" : ""}
+                <Link className="rd-help-link" to="/help#severity">
+                  définitions des niveaux →
+                </Link>
               </div>
               <BarList
                 data={severityBarData}
@@ -1037,8 +1100,14 @@ export default function ResultsDashboardPage() {
                       <th>Système</th>
                       <th>Segments</th>
                       <th>Erreurs</th>
-                      <th>Score moyen</th>
-                      <th>Score normalisé</th>
+                      <th>
+                        Score moyen
+                        <InfoTip text={SCORE_AVG_DEFINITION} />
+                      </th>
+                      <th>
+                        Score normalisé
+                        <InfoTip text={SCORE_NORMALIZED_DEFINITION} />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1066,8 +1135,14 @@ export default function ResultsDashboardPage() {
                       <th>Annotateur·ice</th>
                       <th>Segments faits</th>
                       <th>Erreurs</th>
-                      <th>Score moyen</th>
-                      <th>Score normalisé</th>
+                      <th>
+                        Score moyen
+                        <InfoTip text={SCORE_AVG_DEFINITION} />
+                      </th>
+                      <th>
+                        Score normalisé
+                        <InfoTip text={SCORE_NORMALIZED_DEFINITION} />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1101,6 +1176,9 @@ export default function ResultsDashboardPage() {
           <div className="rd-panel" style={{ marginBottom: "1.5rem" }}>
             <div className="rd-panel-title">
               Détail des erreurs ({sortedRows.length} sur {rows.length})
+              <Link className="rd-help-link" to="/help#categories">
+                définitions des catégories et niveaux →
+              </Link>
             </div>
             {sortedRows.length === 0 ? (
               <p className="rd-panel-empty">Aucune erreur ne correspond aux filtres actuels.</p>

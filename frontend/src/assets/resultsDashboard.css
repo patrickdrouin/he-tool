@@ -52,6 +52,35 @@
   white-space: nowrap;
 }
 
+/* Hover-definition icon (native title tooltip) */
+
+.rd-infotip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 0.3rem;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--rd-ink-muted);
+  cursor: help;
+  flex: 0 0 auto;
+}
+
+.rd-infotip:hover {
+  color: var(--rd-ink-secondary);
+}
+
+.rd-help-link {
+  font-size: 0.75rem;
+  color: var(--rd-ink-secondary);
+  text-decoration: underline;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
 /* KPI cards */
 
 .rd-kpi-grid {
@@ -69,6 +98,8 @@
 }
 
 .rd-kpi-label {
+  display: flex;
+  align-items: center;
   font-size: 0.78rem;
   color: var(--rd-ink-secondary);
   margin-bottom: 0.25rem;
