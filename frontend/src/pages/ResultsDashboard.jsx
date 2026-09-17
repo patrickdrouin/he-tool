@@ -2,8 +2,20 @@
  * Results dashboard — SciTradUM fork addition (see CLAUDE.md).
  *
  * Built from scratch to replace the Marot-viewer-based /results page for
- * day-to-day use: KPI summary, filterable charts, per-system/annotator
- * stats, IAA, and a searchable/sortable error table with per-row context.
+ * day-to-day use. Beyond the base KPI/filter/chart/error-table view, this
+ * adds a few things aimed specifically at translators reading the analysis
+ * rather than just an admin retrieving data:
+ *   - errors-per-100-words normalization, alongside the raw per-segment
+ *     score, so documents/segments of different lengths stay comparable
+ *   - a per-system "error fingerprint" (category breakdown per system)
+ *   - a severity-calibration table (does this annotator mark "critical"
+ *     more liberally than the group?)
+ *   - a disagreement/consensus panel for double-annotated segments, with
+ *     each annotator's markings highlighted on the same translation
+ *   - recurring-error clustering (the same span/category flagged across
+ *     multiple segments — a systematic MT issue, not isolated errors)
+ *   - a searchable feed of every free-text comment, otherwise buried one
+ *     marking at a time
  * The original page (public/viewer.js + IaaSection) is kept at /results —
  * this lives at /results/dashboard so both remain reachable.
  *
@@ -89,6 +101,38 @@ function highlightWords(text, start, end) {
       {i < words.length - 1 ? " " : ""}
     </span>
   ));
+}
+
+function highlightMultipleMarkings(text, markings) {
+  if (!text) return "—";
+  const words = text.trim().replace(/\s+/g, " ").split(" ");
+  // One entry per word: the most severe marking touching it wins the color,
+  // but every category that touched the word is kept for the tooltip.
+  const info = words.map(() => null);
+  for (const m of markings) {
+    const weight = SEVERITY_WEIGHT[m.severity] ?? 0;
+    for (let i = Math.max(0, m.start); i <= m.end && i < words.length; i++) {
+      const existing = info[i];
+      if (!existing || weight > existing.weight) {
+        info[i] = { weight, severity: m.severity, labels: new Set([m.categoryLabel]) };
+      } else {
+        existing.labels.add(m.categoryLabel);
+      }
+    }
+  }
+  return words.map((word, i) => {
+    const mark = info[i];
+    return (
+      <span
+        key={i}
+        className={mark ? `rd-hl ${SEVERITY_CSS_CLASS[mark.severity] ? `rd-hl-${mark.severity}` : "rd-hl-other"}` : undefined}
+        title={mark ? Array.from(mark.labels).join(", ") : undefined}
+      >
+        {word}
+        {i < words.length - 1 ? " " : ""}
+      </span>
+    );
+  });
 }
 
 function BarList({ data, colorFor, emptyLabel }) {
@@ -177,6 +221,421 @@ function IaaPanel({ evaluationId }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SystemFingerprints({ rows, systems }) {
+  const bySystem = useMemo(() => {
+    const map = new Map();
+    for (const s of systems) map.set(s.id, { name: s.name, counts: {} });
+    for (const r of rows) {
+      if (r.isSource) continue;
+      const entry = map.get(r.systemId);
+      if (!entry) continue;
+      entry.counts[r.categoryGroup] = (entry.counts[r.categoryGroup] || 0) + 1;
+    }
+    return Array.from(map.values());
+  }, [rows, systems]);
+
+  if (systems.length < 2) return null;
+
+  return (
+    <div className="rd-panel" style={{ marginBottom: "1.25rem" }}>
+      <div className="rd-panel-title">Profil d'erreurs par système</div>
+      <p className="rd-panel-subtitle">
+        Répartition des catégories d'erreur pour chaque système — utile pour voir qu'un moteur
+        a plutôt des problèmes de terminologie alors qu'un autre a des problèmes de grammaire,
+        même si leur score global est proche.
+      </p>
+      <div className="rd-panel-grid">
+        {bySystem.map((s) => {
+          const barData = CATEGORY_GROUP_ORDER.filter((g) => s.counts[g])
+            .map((g) => ({ key: g, label: CATEGORY_GROUP_LABEL_FR[g] || g, value: s.counts[g] }))
+            .sort((a, b) => b.value - a.value);
+          return (
+            <div key={s.name}>
+              <div className="rd-fingerprint-title">{s.name}</div>
+              <BarList
+                data={barData}
+                colorFor={(d) => CATEGORY_GROUP_COLORS[d.key] || "var(--rd-ink-muted)"}
+                emptyLabel="Aucune erreur relevée."
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SeverityCalibration({ rows, annotators }) {
+  const stats = useMemo(() => {
+    const map = new Map();
+    for (const a of annotators) {
+      map.set(a.annotator, { annotator: a.annotator, minor: 0, major: 0, critical: 0 });
+    }
+    for (const r of rows) {
+      if (r.isSource) continue;
+      if (!(r.severity in SEVERITY_WEIGHT) || SEVERITY_WEIGHT[r.severity] === 0) continue;
+      const entry = map.get(r.annotator);
+      if (!entry) continue;
+      entry[r.severity] += 1;
+    }
+    return Array.from(map.values())
+      .map((s) => ({ ...s, total: s.minor + s.major + s.critical }))
+      .filter((s) => s.total > 0);
+  }, [rows, annotators]);
+
+  if (stats.length < 2) return null;
+
+  return (
+    <div className="rd-panel" style={{ marginBottom: "1.25rem" }}>
+      <div className="rd-panel-title">Calibration de sévérité</div>
+      <p className="rd-panel-subtitle">
+        Comment chaque annotateur·ice répartit ses erreurs entre mineure, majeure et critique —
+        utile pour repérer qui est systématiquement plus sévère ou plus indulgent·e que le groupe.
+      </p>
+      <div className="rd-legend">
+        <span className="rd-legend-item">
+          <span className="rd-legend-dot" style={{ background: "var(--rd-sev-minor)" }} />
+          Mineure
+        </span>
+        <span className="rd-legend-item">
+          <span className="rd-legend-dot" style={{ background: "var(--rd-sev-major)" }} />
+          Majeure
+        </span>
+        <span className="rd-legend-item">
+          <span className="rd-legend-dot" style={{ background: "var(--rd-sev-critical)" }} />
+          Critique
+        </span>
+      </div>
+      <div className="rd-table-wrap">
+        <table className="rd-stat-table">
+          <thead>
+            <tr>
+              <th>Annotateur·ice</th>
+              <th>Total</th>
+              <th>Répartition</th>
+              <th>% mineure</th>
+              <th>% majeure</th>
+              <th>% critique</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stats.map((s) => (
+              <tr key={s.annotator}>
+                <td>{s.annotator}</td>
+                <td>{s.total}</td>
+                <td style={{ minWidth: 160 }}>
+                  <div className="rd-stacked-bar">
+                    {s.minor > 0 && (
+                      <span style={{ width: `${(s.minor / s.total) * 100}%`, background: "var(--rd-sev-minor)" }} />
+                    )}
+                    {s.major > 0 && (
+                      <span style={{ width: `${(s.major / s.total) * 100}%`, background: "var(--rd-sev-major)" }} />
+                    )}
+                    {s.critical > 0 && (
+                      <span style={{ width: `${(s.critical / s.total) * 100}%`, background: "var(--rd-sev-critical)" }} />
+                    )}
+                  </div>
+                </td>
+                <td>{fmt((s.minor / s.total) * 100, 0)}%</td>
+                <td>{fmt((s.major / s.total) * 100, 0)}%</td>
+                <td>{fmt((s.critical / s.total) * 100, 0)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function DisagreementPanel({ segments }) {
+  const [expandedKey, setExpandedKey] = useState(null);
+
+  const candidates = useMemo(() => {
+    const list = [];
+    for (const seg of segments) {
+      const bySystem = new Map();
+      for (const ann of seg.annotations) {
+        for (const sys of ann.systems) {
+          if (!bySystem.has(sys.systemId)) bySystem.set(sys.systemId, []);
+          bySystem.get(sys.systemId).push({
+            annotator: ann.annotator,
+            systemName: sys.systemName,
+            translation: sys.translation,
+            score: sys.score,
+            normalizedScore: sys.normalizedScore,
+            markings: sys.markings.filter((m) => !m.isSource),
+          });
+        }
+      }
+      for (const group of bySystem.values()) {
+        if (group.length < 2) continue;
+        const scores = group.map((g) => g.score);
+        const spread = Math.max(...scores) - Math.min(...scores);
+        if (spread <= 0) continue;
+        list.push({
+          key: `${seg.bitextId}-${group[0].systemName}`,
+          bitextId: seg.bitextId,
+          documentName: seg.documentName,
+          source: seg.source,
+          systemName: group[0].systemName,
+          spread,
+          group: [...group].sort((a, b) => b.score - a.score),
+        });
+      }
+    }
+    return list.sort((a, b) => b.spread - a.spread).slice(0, 15);
+  }, [segments]);
+
+  return (
+    <div className="rd-panel" style={{ marginBottom: "1.25rem" }}>
+      <div className="rd-panel-title">Segments à désaccord</div>
+      <p className="rd-panel-subtitle">
+        Segments annotés par plusieurs personnes où le score MQM diverge le plus — le matériel
+        le plus utile pour une discussion de calibration ou pour repérer une phrase source ambiguë.
+      </p>
+      {candidates.length === 0 ? (
+        <p className="rd-panel-empty">
+          Aucun segment à double annotation avec désaccord de score pour l'instant.
+        </p>
+      ) : (
+        <div className="rd-disagreement-list">
+          {candidates.map((c) => (
+            <div key={c.key} className="rd-disagreement-item">
+              <button
+                type="button"
+                className="rd-disagreement-header"
+                onClick={() => setExpandedKey((k) => (k === c.key ? null : c.key))}
+              >
+                <span>
+                  {c.documentName} · #{c.bitextId} · {c.systemName}
+                </span>
+                <span className="rd-disagreement-spread">écart de {fmt(c.spread, 0)} points</span>
+                <span>{expandedKey === c.key ? "▾" : "▸"}</span>
+              </button>
+              {expandedKey === c.key && (
+                <div className="rd-disagreement-body">
+                  <div className="rd-detail-block">
+                    <div className="rd-detail-label">Source</div>
+                    <div className="rd-detail-text">{c.source}</div>
+                  </div>
+                  {c.group.map((g) => (
+                    <div className="rd-detail-block" key={g.annotator}>
+                      <div className="rd-detail-label">
+                        {g.annotator} — score {fmt(g.score, 0)}
+                        {g.normalizedScore !== null ? ` (${fmt(g.normalizedScore)} / 100 mots)` : ""}
+                      </div>
+                      <div className="rd-detail-text">
+                        {highlightMultipleMarkings(g.translation, g.markings)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecurringErrorsPanel({ rows }) {
+  const [expandedKey, setExpandedKey] = useState(null);
+
+  const groups = useMemo(() => {
+    const map = new Map();
+    for (const r of rows) {
+      const text = (r.text || "").trim();
+      if (text.length < 3) continue;
+      const key = `${r.categoryGroup}::${text.toLowerCase()}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          text,
+          categoryGroup: r.categoryGroup,
+          categoryLabel: r.categoryLabel,
+          occurrences: [],
+        });
+      }
+      map.get(key).occurrences.push(r);
+    }
+    return Array.from(map.values())
+      .filter((g) => g.occurrences.length >= 2)
+      .sort((a, b) => b.occurrences.length - a.occurrences.length)
+      .slice(0, 12);
+  }, [rows]);
+
+  return (
+    <div className="rd-panel" style={{ marginBottom: "1.25rem" }}>
+      <div className="rd-panel-title">Erreurs récurrentes</div>
+      <p className="rd-panel-subtitle">
+        Le même passage marqué comme erreur, dans la même catégorie, sur plusieurs segments —
+        souvent le signe d'un problème systématique (terme mal traduit de façon répétée, etc.)
+        plutôt que d'erreurs isolées.
+      </p>
+      {groups.length === 0 ? (
+        <p className="rd-panel-empty">Aucune erreur répétée détectée pour l'instant.</p>
+      ) : (
+        <div className="rd-disagreement-list">
+          {groups.map((g) => (
+            <div key={g.key} className="rd-disagreement-item">
+              <button
+                type="button"
+                className="rd-disagreement-header"
+                onClick={() => setExpandedKey((k) => (k === g.key ? null : g.key))}
+              >
+                <span>
+                  <span
+                    className="rd-bar-dot"
+                    style={{
+                      background: CATEGORY_GROUP_COLORS[g.categoryGroup] || "var(--rd-ink-muted)",
+                      display: "inline-block",
+                      marginRight: 6,
+                      verticalAlign: "middle",
+                    }}
+                  />
+                  « {g.text} » — {g.categoryLabel}
+                </span>
+                <span className="rd-disagreement-spread">{g.occurrences.length} occurrences</span>
+                <span>{expandedKey === g.key ? "▾" : "▸"}</span>
+              </button>
+              {expandedKey === g.key && (
+                <div className="rd-disagreement-body">
+                  <table className="rd-stat-table">
+                    <thead>
+                      <tr>
+                        <th>Document</th>
+                        <th>Segment</th>
+                        <th>Système</th>
+                        <th>Annotateur·ice</th>
+                        <th>Sévérité</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {g.occurrences.map((o) => (
+                        <tr key={o.key}>
+                          <td>{o.documentName}</td>
+                          <td>#{o.bitextId}</td>
+                          <td>{o.systemName}</td>
+                          <td>{o.annotator}</td>
+                          <td>
+                            <SeverityBadge severity={o.severity} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommentsPanel({ segments }) {
+  const [search, setSearch] = useState("");
+
+  const comments = useMemo(() => {
+    const list = [];
+    for (const seg of segments) {
+      for (const ann of seg.annotations) {
+        if (ann.comment) {
+          list.push({
+            key: `seg-${seg.bitextId}-${ann.annotator}`,
+            documentName: seg.documentName,
+            bitextId: seg.bitextId,
+            annotator: ann.annotator,
+            systemName: null,
+            badge: "Commentaire général",
+            severity: null,
+            comment: ann.comment,
+          });
+        }
+        for (const sys of ann.systems) {
+          for (const m of sys.markings) {
+            if (m.comment) {
+              list.push({
+                key: `m-${m.id}`,
+                documentName: seg.documentName,
+                bitextId: seg.bitextId,
+                annotator: ann.annotator,
+                systemName: sys.systemName,
+                badge: m.categoryLabel,
+                severity: m.severity,
+                comment: m.comment,
+              });
+            }
+          }
+        }
+      }
+    }
+    return list;
+  }, [segments]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return comments;
+    return comments.filter((c) =>
+      `${c.comment} ${c.annotator} ${c.documentName}`.toLowerCase().includes(q)
+    );
+  }, [comments, search]);
+
+  return (
+    <div className="rd-panel" style={{ marginBottom: "1.5rem" }}>
+      <div className="rd-panel-title">
+        Commentaires ({filtered.length} sur {comments.length})
+      </div>
+      <p className="rd-panel-subtitle">
+        Tous les commentaires libres laissés par les annotateur·ice·s, généraux ou associés à une
+        erreur précise — souvent la partie la plus riche du retour qualitatif, autrement noyée
+        dans le détail des erreurs.
+      </p>
+      <input
+        type="text"
+        className="form-control tw-mb-3"
+        style={{ maxWidth: 360 }}
+        placeholder="Rechercher dans les commentaires…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      {filtered.length === 0 ? (
+        <p className="rd-panel-empty">
+          {comments.length === 0
+            ? "Aucun commentaire pour cette évaluation."
+            : "Aucun commentaire ne correspond à la recherche."}
+        </p>
+      ) : (
+        <div className="rd-comment-list">
+          {filtered.map((c) => (
+            <div key={c.key} className="rd-comment-item">
+              <div className="rd-comment-meta">
+                <span className="rd-comment-loc">
+                  {c.documentName} · #{c.bitextId}
+                  {c.systemName ? ` · ${c.systemName}` : ""}
+                </span>
+                <span className="rd-comment-author">{c.annotator}</span>
+                {c.severity ? (
+                  <>
+                    <SeverityBadge severity={c.severity} />
+                    <span className="rd-comment-category">{c.badge}</span>
+                  </>
+                ) : (
+                  <span className="rd-badge rd-badge-source">{c.badge}</span>
+                )}
+              </div>
+              <div className="rd-comment-text">{c.comment}</div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -335,6 +794,23 @@ export default function ResultsDashboardPage() {
     return scores.reduce((a, b) => a + b, 0) / scores.length;
   }, [data]);
 
+  // Standard MQM normalization (errors per 100 words) computed over the
+  // whole evaluation, so it's comparable across documents/segments of very
+  // different lengths — unlike the raw per-segment average above.
+  const overallNormalizedScore = useMemo(() => {
+    if (!data) return null;
+    let scoreTotal = 0;
+    let wordTotal = 0;
+    for (const seg of data.segments) {
+      for (const ann of seg.annotations) {
+        scoreTotal += ann.score;
+        wordTotal += ann.wordCount || 0;
+      }
+    }
+    if (!wordTotal) return null;
+    return (scoreTotal / wordTotal) * 100;
+  }, [data]);
+
   function toggleSort(key) {
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
   }
@@ -425,6 +901,11 @@ export default function ResultsDashboardPage() {
               <div className="rd-kpi-label">Score MQM moyen</div>
               <div className="rd-kpi-value">{fmt(overallAvgScore)}</div>
               <div className="rd-kpi-sub">par segment annoté (mineure=1, majeure=5, critique=25)</div>
+            </div>
+            <div className="rd-kpi-card">
+              <div className="rd-kpi-label">Score normalisé</div>
+              <div className="rd-kpi-value">{fmt(overallNormalizedScore)}</div>
+              <div className="rd-kpi-sub">erreurs pour 100 mots — comparable entre segments/documents</div>
             </div>
             <div className="rd-kpi-card">
               <div className="rd-kpi-label">Annotateur·ice·s</div>
@@ -551,6 +1032,8 @@ export default function ResultsDashboardPage() {
             </div>
           </div>
 
+          <SystemFingerprints rows={rows} systems={data.systems} />
+
           <div className="rd-panel-grid">
             <div className="rd-panel">
               <div className="rd-panel-title">Score moyen par système</div>
@@ -564,6 +1047,7 @@ export default function ResultsDashboardPage() {
                       <th>Segments</th>
                       <th>Erreurs</th>
                       <th>Score moyen</th>
+                      <th>Score normalisé</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -573,6 +1057,7 @@ export default function ResultsDashboardPage() {
                         <td>{s.annotationCount}</td>
                         <td>{s.markingCount}</td>
                         <td>{fmt(s.avgScore)}</td>
+                        <td>{fmt(s.normalizedScore)} /100 mots</td>
                       </tr>
                     ))}
                   </tbody>
@@ -591,6 +1076,7 @@ export default function ResultsDashboardPage() {
                       <th>Segments faits</th>
                       <th>Erreurs</th>
                       <th>Score moyen</th>
+                      <th>Score normalisé</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -602,6 +1088,7 @@ export default function ResultsDashboardPage() {
                         </td>
                         <td>{a.markingCount}</td>
                         <td>{fmt(a.avgScore)}</td>
+                        <td>{fmt(a.normalizedScore)} /100 mots</td>
                       </tr>
                     ))}
                   </tbody>
@@ -610,7 +1097,15 @@ export default function ResultsDashboardPage() {
             </div>
           </div>
 
+          <SeverityCalibration rows={rows} annotators={data.annotators} />
+
           <IaaPanel evaluationId={evaluationId} />
+
+          <DisagreementPanel segments={data.segments} />
+
+          <RecurringErrorsPanel rows={rows} />
+
+          <CommentsPanel segments={data.segments} />
 
           <div className="rd-panel" style={{ marginBottom: "1.5rem" }}>
             <div className="rd-panel-title">

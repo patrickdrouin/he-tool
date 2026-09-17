@@ -337,6 +337,178 @@
   color: var(--rd-ink-secondary);
 }
 
+/* Multi-marking highlight (disagreement view) — same visual language as
+ * .rd-highlight but color-coded by severity, since several annotators'
+ * markings can land on the same word. */
+
+.rd-hl {
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.rd-hl-minor {
+  background: rgba(250, 178, 25, 0.28);
+  box-shadow: 0 0 0 1px rgba(250, 178, 25, 0.5);
+}
+
+.rd-hl-major {
+  background: rgba(236, 131, 90, 0.3);
+  box-shadow: 0 0 0 1px rgba(236, 131, 90, 0.55);
+}
+
+.rd-hl-critical {
+  background: rgba(208, 59, 59, 0.28);
+  box-shadow: 0 0 0 1px rgba(208, 59, 59, 0.55);
+}
+
+.rd-hl-other {
+  background: var(--rd-gridline);
+}
+
+/* Panel subtitle — one line of context under a panel title */
+
+.rd-panel-subtitle {
+  font-size: 0.82rem;
+  color: var(--rd-ink-secondary);
+  margin: -0.35rem 0 0.85rem;
+  max-width: 68ch;
+}
+
+/* Fingerprint small multiples */
+
+.rd-fingerprint-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--rd-ink-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* Legend row (severity calibration) */
+
+.rd-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.rd-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--rd-ink-secondary);
+}
+
+.rd-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 10px;
+}
+
+/* Stacked proportion bar (severity calibration table) */
+
+.rd-stacked-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--rd-gridline);
+}
+
+.rd-stacked-bar span {
+  height: 100%;
+}
+
+/* Expandable list rows shared by the disagreement and recurring-error panels */
+
+.rd-disagreement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rd-disagreement-item {
+  border: 1px solid var(--rd-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rd-disagreement-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--rd-surface);
+  border: none;
+  text-align: left;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--rd-ink);
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+}
+
+.rd-disagreement-header:hover {
+  background: var(--rd-plane);
+}
+
+.rd-disagreement-spread {
+  font-size: 0.75rem;
+  color: var(--rd-ink-secondary);
+  white-space: nowrap;
+}
+
+.rd-disagreement-body {
+  background: var(--rd-plane);
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--rd-border);
+}
+
+/* Comments panel */
+
+.rd-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rd-comment-item {
+  border-bottom: 1px solid var(--rd-gridline);
+  padding-bottom: 0.6rem;
+}
+
+.rd-comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--rd-ink-muted);
+  margin-bottom: 0.25rem;
+}
+
+.rd-comment-loc {
+  color: var(--rd-ink-secondary);
+}
+
+.rd-comment-author {
+  font-weight: 600;
+  color: var(--rd-ink-secondary);
+}
+
+.rd-comment-category {
+  font-style: italic;
+}
+
+.rd-comment-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 /* Pagination */
 
 .rd-pagination {

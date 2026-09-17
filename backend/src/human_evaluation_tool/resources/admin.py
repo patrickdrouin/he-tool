@@ -741,6 +741,7 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
                     "segmentsSeen": 0,
                     "markingCount": 0,
                     "scoreTotal": 0.0,
+                    "wordCountTotal": 0,
                 },
             )
             stats["segmentsSeen"] += 1
@@ -757,12 +758,16 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
 
             system_entries = []
             segment_score = 0.0
+            segment_word_count = 0
 
             for ann_sys in ann_systems:
                 system = db.session.get(System, ann_sys.systemId)
                 system_name = system.name if system else str(ann_sys.systemId)
                 if system is not None and system.id not in systems:
                     systems[system.id] = {"id": system.id, "name": system.name}
+
+                translation_word_count = len((ann_sys.translation or "").split())
+                segment_word_count += translation_word_count
 
                 markings = (
                     db.session.execute(
@@ -775,6 +780,7 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
                 )
 
                 marking_entries = []
+                system_score = 0.0
                 for m in markings:
                     label = CATEGORY_NAME.get(m.errorCategory, m.errorCategory)
                     group = label.split("/", 1)[0] if "/" in label else label
@@ -810,6 +816,7 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
                     if not m.isSource:
                         weight = _SEVERITY_WEIGHT.get(m.errorSeverity, 0.0)
                         segment_score += weight
+                        system_score += weight
                         stats["scoreTotal"] += weight
                         stats["markingCount"] += 1
 
@@ -819,6 +826,7 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
                                 {
                                     "system": system.name,
                                     "scoreTotal": 0.0,
+                                    "wordCountTotal": 0,
                                     "annotationCount": 0,
                                     "markingCount": 0,
                                 },
@@ -826,29 +834,48 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
                             sys_totals["scoreTotal"] += weight
                             sys_totals["markingCount"] += 1
 
+                # MQM score for this one annotator/system pair, plus the
+                # same normalized to errors-per-100-words so segments and
+                # documents of different lengths stay comparable.
                 system_entries.append({
                     "systemId": ann_sys.systemId,
                     "systemName": system_name,
                     "translation": ann_sys.translation or "",
+                    "wordCount": translation_word_count,
+                    "score": system_score,
+                    "normalizedScore": (
+                        system_score / translation_word_count * 100
+                        if translation_word_count
+                        else None
+                    ),
                     "markings": marking_entries,
                 })
 
                 if system is not None:
-                    system_totals.setdefault(
+                    sys_totals = system_totals.setdefault(
                         system.id,
                         {
                             "system": system.name,
                             "scoreTotal": 0.0,
+                            "wordCountTotal": 0,
                             "annotationCount": 0,
                             "markingCount": 0,
                         },
-                    )["annotationCount"] += 1
+                    )
+                    sys_totals["annotationCount"] += 1
+                    sys_totals["wordCountTotal"] += translation_word_count
+
+            stats["wordCountTotal"] += segment_word_count
 
             segment_annotations.append({
                 "annotator": annotator,
                 "isAnnotated": ann.isAnnotated,
                 "comment": ann.comment or "",
                 "score": segment_score,
+                "wordCount": segment_word_count,
+                "normalizedScore": (
+                    segment_score / segment_word_count * 100 if segment_word_count else None
+                ),
                 "systems": system_entries,
             })
 
@@ -869,6 +896,13 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
             "avgScore": (
                 s["scoreTotal"] / s["segmentsSeen"] if s["segmentsSeen"] else None
             ),
+            "wordCount": s["wordCountTotal"],
+            # Errors per 100 words across everything this annotator scored —
+            # the standard MQM normalization, comparable across annotators
+            # regardless of how long their segments happened to be.
+            "normalizedScore": (
+                s["scoreTotal"] / s["wordCountTotal"] * 100 if s["wordCountTotal"] else None
+            ),
         }
         for s in sorted(annotator_stats.values(), key=lambda s: s["annotator"])
     ]
@@ -880,6 +914,10 @@ def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
             "markingCount": t["markingCount"],
             "avgScore": (
                 t["scoreTotal"] / t["annotationCount"] if t["annotationCount"] else None
+            ),
+            "wordCount": t["wordCountTotal"],
+            "normalizedScore": (
+                t["scoreTotal"] / t["wordCountTotal"] * 100 if t["wordCountTotal"] else None
             ),
         }
         for t in sorted(system_totals.values(), key=lambda t: t["system"])
