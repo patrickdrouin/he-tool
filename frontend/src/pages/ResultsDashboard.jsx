@@ -32,6 +32,7 @@ import Spinner from "../components/Spinner";
 import { useEvaluations } from "../features/evaluations/useEvaluations";
 import { getEvaluationIaa, getEvaluationResults } from "../services/apiEvaluations";
 import { getEvaluationDashboard, exportEvaluationXml } from "../services/apiAdmin";
+import { downloadTsv } from "../utils/tsv";
 
 import "../assets/resultsDashboard.css";
 
@@ -72,16 +73,6 @@ const EMPTY_FILTERS = {
   severity: "all",
   search: "",
 };
-
-function downloadTsv(rows, filename) {
-  const blob = new Blob([rows.join("")], { type: "text/tab-separated-values" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 function fmt(val, digits = 2) {
   if (val === null || val === undefined) return "—";
