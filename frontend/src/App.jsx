@@ -45,6 +45,7 @@ import NotFoundPage from "./pages/NotFound";
 import ProfilePage from "./pages/Profile";
 import RegisterPage from "./pages/Register";
 import ResultsPage from "./pages/Results";
+import ResultsDashboardPage from "./pages/ResultsDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,7 @@ export default function App() {
           >
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/results" element={<AdminRoute><ResultsPage /></AdminRoute>} />
+            <Route path="/results/dashboard" element={<AdminRoute><ResultsDashboardPage /></AdminRoute>} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/annotate" element={<AnnotatePage />} />

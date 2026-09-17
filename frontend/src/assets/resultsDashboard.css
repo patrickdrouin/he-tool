@@ -1,0 +1,378 @@
+/*
+ * Results dashboard — fork-only addition (see CLAUDE.md).
+ *
+ * Scoped under .rd-root so nothing here leaks into the rest of the app.
+ * Colors follow the project's data-viz palette: fixed categorical hues for
+ * MQM category groups, fixed status hues for severity. Light mode only —
+ * the rest of the app has no dark mode, so this doesn't add one either.
+ */
+
+.rd-root {
+  --rd-surface: #fcfcfb;
+  --rd-plane: #f9f9f7;
+  --rd-ink: #0b0b0b;
+  --rd-ink-secondary: #52514e;
+  --rd-ink-muted: #898781;
+  --rd-gridline: #e1e0d9;
+  --rd-baseline: #c3c2b7;
+  --rd-border: rgba(11, 11, 11, 0.1);
+
+  --rd-cat-accuracy: #2a78d6;
+  --rd-cat-linguistic: #eb6834;
+  --rd-cat-terminology: #1baf7a;
+  --rd-cat-style: #eda100;
+  --rd-cat-locale: #e87ba4;
+  --rd-cat-audience: #008300;
+  --rd-cat-source: #4a3aa7;
+
+  --rd-sev-minor: #fab219;
+  --rd-sev-major: #ec835a;
+  --rd-sev-critical: #d03b3b;
+
+  color: var(--rd-ink);
+}
+
+.rd-root a {
+  color: #2a78d6;
+}
+
+/* Header */
+
+.rd-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rd-alt-view-link {
+  font-size: 0.85rem;
+  color: var(--rd-ink-secondary);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+/* KPI cards */
+
+.rd-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.rd-kpi-card {
+  background: var(--rd-surface);
+  border: 1px solid var(--rd-border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.rd-kpi-label {
+  font-size: 0.78rem;
+  color: var(--rd-ink-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.rd-kpi-value {
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.rd-kpi-sub {
+  font-size: 0.75rem;
+  color: var(--rd-ink-muted);
+  margin-top: 0.15rem;
+}
+
+/* Filters */
+
+.rd-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+  background: var(--rd-plane);
+  border: 1px solid var(--rd-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.rd-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 150px;
+}
+
+.rd-filter-field label {
+  font-size: 0.72rem;
+  color: var(--rd-ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rd-filter-search {
+  flex: 1 1 220px;
+}
+
+/* Panels (charts / small tables) */
+
+.rd-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.rd-panel {
+  background: var(--rd-surface);
+  border: 1px solid var(--rd-border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.rd-panel-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.rd-panel-empty {
+  font-size: 0.85rem;
+  color: var(--rd-ink-muted);
+}
+
+/* Horizontal bar chart, built from plain divs (no data-viz lib in this app) */
+
+.rd-bar-row {
+  display: grid;
+  grid-template-columns: 168px 1fr 44px;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 26px;
+}
+
+.rd-bar-row + .rd-bar-row {
+  margin-top: 6px;
+}
+
+.rd-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--rd-ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rd-bar-dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.rd-bar-track {
+  position: relative;
+  height: 16px;
+  background: var(--rd-gridline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rd-bar-fill {
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  min-width: 3px;
+}
+
+.rd-bar-value {
+  font-size: 0.8rem;
+  color: var(--rd-ink-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Severity badges — icon (dot) + label, never color alone */
+
+.rd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.rd-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.rd-badge-minor {
+  color: #8a6200;
+  background: rgba(250, 178, 25, 0.18);
+}
+
+.rd-badge-major {
+  color: #a13f1f;
+  background: rgba(236, 131, 90, 0.18);
+}
+
+.rd-badge-critical {
+  color: #a12626;
+  background: rgba(208, 59, 59, 0.16);
+}
+
+.rd-badge-source {
+  color: var(--rd-ink-secondary);
+  background: var(--rd-gridline);
+}
+
+/* Marking table */
+
+.rd-table-wrap {
+  overflow-x: auto;
+}
+
+.rd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.rd-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--rd-ink-secondary);
+  border-bottom: 1px solid var(--rd-baseline);
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
+}
+
+.rd-table th button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.rd-table th button:hover {
+  color: var(--rd-ink);
+}
+
+.rd-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--rd-gridline);
+  vertical-align: top;
+}
+
+.rd-table tbody tr.rd-row {
+  cursor: pointer;
+}
+
+.rd-table tbody tr.rd-row:hover {
+  background: var(--rd-plane);
+}
+
+.rd-table tbody tr.rd-row-open {
+  background: var(--rd-plane);
+}
+
+.rd-cell-source {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--rd-ink-secondary);
+}
+
+.rd-detail-row td {
+  background: var(--rd-plane);
+  padding: 0.85rem 1rem 1rem 2.2rem;
+}
+
+.rd-detail-block + .rd-detail-block {
+  margin-top: 0.6rem;
+}
+
+.rd-detail-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--rd-ink-muted);
+  margin-bottom: 0.15rem;
+}
+
+.rd-detail-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.rd-highlight {
+  background: rgba(208, 59, 59, 0.18);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(208, 59, 59, 0.35);
+  padding: 0 1px;
+}
+
+.rd-comment {
+  font-style: italic;
+  color: var(--rd-ink-secondary);
+}
+
+/* Pagination */
+
+.rd-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--rd-ink-secondary);
+}
+
+.rd-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Small stats table (systems / annotators) */
+
+.rd-stat-table {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+
+.rd-stat-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--rd-ink-secondary);
+  border-bottom: 1px solid var(--rd-baseline);
+  padding: 0.35rem 0.5rem;
+}
+
+.rd-stat-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--rd-gridline);
+  font-variant-numeric: tabular-nums;
+}

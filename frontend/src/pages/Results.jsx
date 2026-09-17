@@ -21,6 +21,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
@@ -165,6 +166,12 @@ export default function ResultsPage() {
     <div className="tw-m-4">
       <div className="tw-flex tw-flex-row tw-items-center tw-gap-4 tw-flex-wrap">
         <h1 className="tw-text-lg tw-font-bold">Évaluation :</h1>
+        <Link
+          to="/results/dashboard"
+          className="tw-text-sm tw-text-blue-600 tw-underline tw-order-last md:tw-order-none"
+        >
+          → Nouveau tableau de bord
+        </Link>
         <select
           value={evaluationIndex}
           onChange={(e) => setEvaluationIndex(Number(e.target.value))}
