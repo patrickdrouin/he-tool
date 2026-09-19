@@ -124,6 +124,22 @@ export async function exportEvaluationXml({ evaluationId, filename }) {
   URL.revokeObjectURL(url);
 }
 
+export async function getEvaluationDashboard({ evaluationId }) {
+  const response = await fetch(`/api/admin/evaluations/${evaluationId}/dashboard`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(
+      data.message || `Get dashboard for evaluation ${evaluationId} failed: ${response.status}`,
+    );
+  }
+
+  return await response.json();
+}
+
 export async function importEvaluation({ evaluation, system, users, pairs }) {
   const response = await fetch("/api/admin/import", {
     method: "POST",

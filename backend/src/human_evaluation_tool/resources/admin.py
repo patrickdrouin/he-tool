@@ -39,7 +39,8 @@ from ..models import (
     System,
     User,
 )
-from ..utils import CATEGORY_NAME
+from ..utils import CATEGORY_NAME, SEVERITY_NAME
+from .evaluation import _SEVERITY_WEIGHT
 
 
 bp = Blueprint("admin", __name__)
@@ -676,3 +677,259 @@ def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
         mimetype="text/xml; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{safe_name}.xml"'},
     )
+
+
+@bp.get("/api/admin/evaluations/<int:evaluation_id>/dashboard")
+@jwt_required()
+def read_evaluation_dashboard(evaluation_id: int) -> ResponseReturnValue:
+    """Return a structured overview of an evaluation for the results dashboard.
+
+    Unlike /results (flat TSV rows meant for export) and /iaa (agreement
+    stats only), this nests everything the dashboard needs to render and
+    filter without re-parsing markup: per-segment annotations, per-system
+    translations, every marking with its category/severity resolved to
+    human-readable labels, and a few pre-computed aggregates (category/
+    severity distribution, per-system and per-annotator average scores).
+    """
+
+    if err := _require_admin():
+        return err
+
+    evaluation = db.session.get(Evaluation, evaluation_id)
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    annotations = (
+        db.session.execute(select(Annotation).filter_by(evaluationId=evaluation_id))
+        .scalars()
+        .all()
+    )
+
+    # Group annotations by bitext so each segment appears once, mirroring
+    # the XML export above.
+    bitext_map: dict[int, list[Annotation]] = {}
+    for ann in annotations:
+        bitext_map.setdefault(ann.bitextId, []).append(ann)
+
+    documents: dict[int, dict] = {}
+    systems: dict[int, dict] = {}
+    annotator_stats: dict[str, dict] = {}
+    category_group_counts: dict[str, int] = {}
+    severity_counts: dict[str, int] = {"minor": 0, "major": 0, "critical": 0}
+    system_totals: dict[int, dict] = {}
+
+    segments = []
+
+    for bitext_id, anns in sorted(bitext_map.items()):
+        bitext = db.session.get(Bitext, bitext_id)
+        if bitext is None:
+            continue
+        document = db.session.get(Document, bitext.documentId)
+        if document is not None and document.id not in documents:
+            documents[document.id] = {"id": document.id, "name": document.name}
+
+        segment_annotations = []
+
+        for ann in anns:
+            user = db.session.get(User, ann.userId)
+            annotator = user.email if user else str(ann.userId)
+            stats = annotator_stats.setdefault(
+                annotator,
+                {
+                    "annotator": annotator,
+                    "segmentsAnnotated": 0,
+                    "segmentsSeen": 0,
+                    "markingCount": 0,
+                    "scoreTotal": 0.0,
+                    "wordCountTotal": 0,
+                },
+            )
+            stats["segmentsSeen"] += 1
+            if ann.isAnnotated:
+                stats["segmentsAnnotated"] += 1
+
+            ann_systems = (
+                db.session.execute(
+                    select(AnnotationSystem).filter_by(annotationId=ann.id)
+                )
+                .scalars()
+                .all()
+            )
+
+            system_entries = []
+            segment_score = 0.0
+            segment_word_count = 0
+
+            for ann_sys in ann_systems:
+                system = db.session.get(System, ann_sys.systemId)
+                system_name = system.name if system else str(ann_sys.systemId)
+                if system is not None and system.id not in systems:
+                    systems[system.id] = {"id": system.id, "name": system.name}
+
+                translation_word_count = len((ann_sys.translation or "").split())
+                segment_word_count += translation_word_count
+
+                markings = (
+                    db.session.execute(
+                        select(Marking).filter_by(
+                            annotationId=ann.id, systemId=ann_sys.systemId
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+
+                marking_entries = []
+                system_score = 0.0
+                for m in markings:
+                    label = CATEGORY_NAME.get(m.errorCategory, m.errorCategory)
+                    group = label.split("/", 1)[0] if "/" in label else label
+                    words = (
+                        bitext.source.split()
+                        if m.isSource
+                        else (ann_sys.translation or "").split()
+                    )
+                    span_text = " ".join(words[m.errorStart: m.errorEnd + 1])
+
+                    marking_entries.append({
+                        "id": m.id,
+                        "start": m.errorStart,
+                        "end": m.errorEnd,
+                        "isSource": m.isSource,
+                        "category": m.errorCategory,
+                        "categoryLabel": label,
+                        "categoryGroup": group,
+                        "severity": m.errorSeverity,
+                        "severityLabel": SEVERITY_NAME.get(
+                            m.errorSeverity, m.errorSeverity
+                        ),
+                        "comment": m.comment or "",
+                        "text": span_text,
+                    })
+
+                    category_group_counts[group] = (
+                        category_group_counts.get(group, 0) + 1
+                    )
+                    if m.errorSeverity in severity_counts:
+                        severity_counts[m.errorSeverity] += 1
+
+                    if not m.isSource:
+                        weight = _SEVERITY_WEIGHT.get(m.errorSeverity, 0.0)
+                        segment_score += weight
+                        system_score += weight
+                        stats["scoreTotal"] += weight
+                        stats["markingCount"] += 1
+
+                        if system is not None:
+                            sys_totals = system_totals.setdefault(
+                                system.id,
+                                {
+                                    "system": system.name,
+                                    "scoreTotal": 0.0,
+                                    "wordCountTotal": 0,
+                                    "annotationCount": 0,
+                                    "markingCount": 0,
+                                },
+                            )
+                            sys_totals["scoreTotal"] += weight
+                            sys_totals["markingCount"] += 1
+
+                # MQM score for this one annotator/system pair, plus the
+                # same normalized to errors-per-100-words so segments and
+                # documents of different lengths stay comparable.
+                system_entries.append({
+                    "systemId": ann_sys.systemId,
+                    "systemName": system_name,
+                    "translation": ann_sys.translation or "",
+                    "wordCount": translation_word_count,
+                    "score": system_score,
+                    "normalizedScore": (
+                        system_score / translation_word_count * 100
+                        if translation_word_count
+                        else None
+                    ),
+                    "markings": marking_entries,
+                })
+
+                if system is not None:
+                    sys_totals = system_totals.setdefault(
+                        system.id,
+                        {
+                            "system": system.name,
+                            "scoreTotal": 0.0,
+                            "wordCountTotal": 0,
+                            "annotationCount": 0,
+                            "markingCount": 0,
+                        },
+                    )
+                    sys_totals["annotationCount"] += 1
+                    sys_totals["wordCountTotal"] += translation_word_count
+
+            stats["wordCountTotal"] += segment_word_count
+
+            segment_annotations.append({
+                "annotator": annotator,
+                "isAnnotated": ann.isAnnotated,
+                "comment": ann.comment or "",
+                "score": segment_score,
+                "wordCount": segment_word_count,
+                "normalizedScore": (
+                    segment_score / segment_word_count * 100 if segment_word_count else None
+                ),
+                "systems": system_entries,
+            })
+
+        segments.append({
+            "bitextId": bitext_id,
+            "documentId": bitext.documentId,
+            "documentName": document.name if document else "",
+            "source": bitext.source,
+            "annotations": segment_annotations,
+        })
+
+    annotators = [
+        {
+            "annotator": s["annotator"],
+            "segmentsAnnotated": s["segmentsAnnotated"],
+            "segmentsSeen": s["segmentsSeen"],
+            "markingCount": s["markingCount"],
+            "avgScore": (
+                s["scoreTotal"] / s["segmentsSeen"] if s["segmentsSeen"] else None
+            ),
+            "wordCount": s["wordCountTotal"],
+            # Errors per 100 words across everything this annotator scored —
+            # the standard MQM normalization, comparable across annotators
+            # regardless of how long their segments happened to be.
+            "normalizedScore": (
+                s["scoreTotal"] / s["wordCountTotal"] * 100 if s["wordCountTotal"] else None
+            ),
+        }
+        for s in sorted(annotator_stats.values(), key=lambda s: s["annotator"])
+    ]
+
+    system_scores = [
+        {
+            "system": t["system"],
+            "annotationCount": t["annotationCount"],
+            "markingCount": t["markingCount"],
+            "avgScore": (
+                t["scoreTotal"] / t["annotationCount"] if t["annotationCount"] else None
+            ),
+            "wordCount": t["wordCountTotal"],
+            "normalizedScore": (
+                t["scoreTotal"] / t["wordCountTotal"] * 100 if t["wordCountTotal"] else None
+            ),
+        }
+        for t in sorted(system_totals.values(), key=lambda t: t["system"])
+    ]
+
+    return jsonify({
+        "evaluation": {"id": evaluation.id, "name": evaluation.name},
+        "documents": sorted(documents.values(), key=lambda d: d["name"]),
+        "systems": sorted(systems.values(), key=lambda s: s["name"]),
+        "annotators": annotators,
+        "systemScores": system_scores,
+        "categoryGroupCounts": category_group_counts,
+        "severityCounts": severity_counts,
+        "segments": segments,
+    }), 200

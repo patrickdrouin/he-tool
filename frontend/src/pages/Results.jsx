@@ -21,24 +21,16 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import Spinner from "../components/Spinner";
 import { useEvaluations } from "../features/evaluations/useEvaluations";
 import { getEvaluationIaa, getEvaluationResults } from "../services/apiEvaluations";
 import { exportEvaluationXml } from "../services/apiAdmin";
+import { downloadTsv } from "../utils/tsv";
 
 import "../assets/viewer.css";
-
-function downloadTsv(rows, filename) {
-  const blob = new Blob([rows.join("")], { type: "text/tab-separated-values" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 function fmt(val) {
   if (val === null || val === undefined) return "—";
@@ -165,6 +157,12 @@ export default function ResultsPage() {
     <div className="tw-m-4">
       <div className="tw-flex tw-flex-row tw-items-center tw-gap-4 tw-flex-wrap">
         <h1 className="tw-text-lg tw-font-bold">Évaluation :</h1>
+        <Link
+          to="/results/dashboard"
+          className="tw-text-sm tw-text-blue-600 tw-underline tw-order-last md:tw-order-none"
+        >
+          → Nouveau tableau de bord
+        </Link>
         <select
           value={evaluationIndex}
           onChange={(e) => setEvaluationIndex(Number(e.target.value))}

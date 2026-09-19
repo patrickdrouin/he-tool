@@ -76,7 +76,7 @@ export default function NavigationBar() {
                   {isAdmin && (
                     <>
                       <div className="navbar-nav">
-                        <Link className="nav-item nav-link" to="/results">
+                        <Link className="nav-item nav-link" to="/results/dashboard">
                           Résultats
                         </Link>
                       </div>
