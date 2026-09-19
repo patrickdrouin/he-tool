@@ -672,9 +672,17 @@ function CommentsPanel({ segments }) {
   );
 }
 
+// Columns match the field order the backend writes in
+// GET /api/evaluations/<id>/results (see evaluation.py), with an
+// "Évaluation" column prepended so rows from different evaluations can be
+// told apart once combined into one file.
+const ALL_RESULTS_HEADER =
+  "Évaluation\tSystème\tDocument\tSegment\tSegment\tAnnotateur\tSource\tTraduction\tCatégorie\tSévérité\tCommentaire\n";
+
 export default function ResultsDashboardPage() {
   const [evaluationIndex, setEvaluationIndex] = useState(0);
   const [isExportingXml, setIsExportingXml] = useState(false);
+  const [isExportingAll, setIsExportingAll] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sort, setSort] = useState({ key: "severity", dir: "desc" });
   const [page, setPage] = useState(0);
@@ -841,6 +849,26 @@ export default function ResultsDashboardPage() {
     return (scoreTotal / wordTotal) * 100;
   }, [data]);
 
+  async function handleDownloadAll() {
+    if (!evaluations || evaluations.length === 0) return;
+    setIsExportingAll(true);
+    try {
+      const perEvaluation = await Promise.all(
+        evaluations.map((evaluation) => getEvaluationResults({ id: evaluation["id"] }))
+      );
+      const rows = [ALL_RESULTS_HEADER];
+      perEvaluation.forEach((evalRows, i) => {
+        const name = evaluations[i]["name"];
+        for (const row of evalRows) rows.push(`${name}\t${row}`);
+      });
+      downloadTsv(rows, "toutes_evaluations_resultats.tsv");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsExportingAll(false);
+    }
+  }
+
   function toggleSort(key) {
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
   }
@@ -875,6 +903,16 @@ export default function ResultsDashboardPage() {
           Ancienne vue (visionneuse Marot) →
         </Link>
         <div className="tw-ml-auto tw-flex tw-gap-2">
+          {evaluations && evaluations.length > 0 && (
+            <button
+              className="btn btn-secondary"
+              disabled={isExportingAll}
+              onClick={handleDownloadAll}
+              title="Combine les résultats de toutes les évaluations dans un seul fichier TSV"
+            >
+              {isExportingAll ? "Export en cours…" : "Télécharger tout (toutes les évaluations)"}
+            </button>
+          )}
           {tsvRows && tsvRows.length > 0 && (
             <button
               className="btn btn-secondary"
