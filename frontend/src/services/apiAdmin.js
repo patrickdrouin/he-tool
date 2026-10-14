@@ -105,7 +105,15 @@ export async function deleteEvaluation({ evaluationId }) {
 }
 
 export async function exportEvaluationXml({ evaluationId, filename }) {
-  const response = await fetch(`/api/admin/evaluations/${evaluationId}/export/xml`, {
+  await downloadXml(`/api/admin/evaluations/${evaluationId}/export/xml`, filename);
+}
+
+export async function exportAllEvaluationsXml({ filename }) {
+  await downloadXml("/api/admin/export/xml", filename);
+}
+
+async function downloadXml(url, filename) {
+  const response = await fetch(url, {
     method: "GET",
     credentials: "include",
   });
@@ -116,12 +124,12 @@ export async function exportEvaluationXml({ evaluationId, filename }) {
   }
 
   const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = blobUrl;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(blobUrl);
 }
 
 export async function getEvaluationDashboard({ evaluationId }) {

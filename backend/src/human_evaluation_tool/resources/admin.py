@@ -563,33 +563,27 @@ def get_progress() -> ResponseReturnValue:
     return jsonify(result), 200
 
 
-@bp.get("/api/admin/evaluations/<int:evaluation_id>/export/xml")
-@jwt_required()
-def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
-    """Export all annotations for an evaluation as an XML file.
+def _build_evaluation_xml(evaluation: Evaluation) -> ET.Element:
+    """Build the <evaluation> element for one evaluation.
 
     Each <segment> contains one <annotation> per annotator/system pair.
     Each <annotation> lists its <translation> and any <marking> elements,
     where <span start="N" end="N"> gives the word-index range and text.
+    Annotations without markings are kept so "no error" judgements survive.
     """
 
-    if err := _require_admin():
-        return err
-
-    evaluation = db.session.get(Evaluation, evaluation_id)
-    if evaluation is None:
-        return {"message": "Evaluation not found"}, 404
-
     annotations = (
-        db.session.execute(select(Annotation).filter_by(evaluationId=evaluation_id))
+        db.session.execute(select(Annotation).filter_by(evaluationId=evaluation.id))
         .scalars()
         .all()
     )
 
-    root = ET.Element(
+    eval_el = ET.Element(
         "evaluation",
+        id=str(evaluation.id),
         name=evaluation.name,
-        exported=datetime.now().isoformat(timespec="seconds"),
+        type=evaluation.type,
+        finished="true" if evaluation.isFinished else "false",
     )
 
     # Group by bitext so each segment appears once
@@ -603,10 +597,17 @@ def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
             continue
 
         source_words = bitext.source.strip().split()
+        document = db.session.get(Document, bitext.documentId)
 
-        seg_el = ET.SubElement(root, "segment", id=str(bitext_id))
+        seg_el = ET.SubElement(eval_el, "segment", id=str(bitext_id))
+        if document is not None:
+            seg_el.set("documentId", str(document.id))
+            seg_el.set("document", document.name)
         src_el = ET.SubElement(seg_el, "source")
         src_el.text = bitext.source
+        if bitext.target:
+            ref_el = ET.SubElement(seg_el, "reference")
+            ref_el.text = bitext.target
 
         for ann in anns:
             user = db.session.get(User, ann.userId)
@@ -624,19 +625,6 @@ def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
                 system = db.session.get(System, ann_sys.systemId)
                 system_name = system.name if system else str(ann_sys.systemId)
 
-                ann_el = ET.SubElement(
-                    seg_el,
-                    "annotation",
-                    annotator=annotator,
-                    system=system_name,
-                    completed="true" if ann.isAnnotated else "false",
-                )
-                if ann.comment:
-                    ann_el.set("comment", ann.comment)
-
-                trans_el = ET.SubElement(ann_el, "translation")
-                trans_el.text = ann_sys.translation or ""
-
                 translation_words = (ann_sys.translation or "").strip().split()
 
                 markings = (
@@ -649,14 +637,41 @@ def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
                     .all()
                 )
 
-                for m in markings:
+                # Same scoring rule as the dashboard: only target-side markings count.
+                score = sum(
+                    _SEVERITY_WEIGHT.get(m.errorSeverity, 0.0)
+                    for m in markings
+                    if not m.isSource
+                )
+
+                ann_el = ET.SubElement(
+                    seg_el,
+                    "annotation",
+                    id=str(ann.id),
+                    annotator=annotator,
+                    system=system_name,
+                    completed="true" if ann.isAnnotated else "false",
+                    score=f"{score:g}",
+                    wordCount=str(len(translation_words)),
+                    updated=ann.updatedAt.isoformat(timespec="seconds"),
+                )
+                if ann.comment:
+                    ann_el.set("comment", ann.comment)
+
+                trans_el = ET.SubElement(ann_el, "translation")
+                trans_el.text = ann_sys.translation or ""
+
+                for m in sorted(markings, key=lambda m: (m.isSource, m.errorStart, m.id)):
                     words = source_words if m.isSource else translation_words
                     span_text = " ".join(words[m.errorStart: m.errorEnd + 1])
                     m_el = ET.SubElement(
                         ann_el,
                         "marking",
+                        id=str(m.id),
                         severity=m.errorSeverity,
+                        weight=f"{_SEVERITY_WEIGHT.get(m.errorSeverity, 0.0):g}",
                         category=CATEGORY_NAME.get(m.errorCategory, m.errorCategory),
+                        categoryCode=m.errorCategory,
                         side="source" if m.isSource else "target",
                     )
                     if m.comment:
@@ -666,17 +681,58 @@ def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
                     )
                     span_el.text = span_text
 
+    return eval_el
+
+
+def _xml_response(root: ET.Element, filename: str) -> Response:
     ET.indent(root)
     xml_str = '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(
         root, encoding="unicode"
     )
-
-    safe_name = "".join(c if c.isalnum() or c in "-_." else "_" for c in evaluation.name)
+    safe_name = "".join(c if c.isalnum() or c in "-_." else "_" for c in filename)
     return Response(
         xml_str,
         mimetype="text/xml; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{safe_name}.xml"'},
     )
+
+
+@bp.get("/api/admin/evaluations/<int:evaluation_id>/export/xml")
+@jwt_required()
+def export_evaluation_xml(evaluation_id: int) -> ResponseReturnValue:
+    """Export all annotations for an evaluation as an XML file."""
+
+    if err := _require_admin():
+        return err
+
+    evaluation = db.session.get(Evaluation, evaluation_id)
+    if evaluation is None:
+        return {"message": "Evaluation not found"}, 404
+
+    root = _build_evaluation_xml(evaluation)
+    root.set("exported", datetime.now().isoformat(timespec="seconds"))
+    return _xml_response(root, evaluation.name)
+
+
+@bp.get("/api/admin/export/xml")
+@jwt_required()
+def export_all_xml() -> ResponseReturnValue:
+    """Export every evaluation, with all its annotations, as one XML file."""
+
+    if err := _require_admin():
+        return err
+
+    evaluations = (
+        db.session.execute(select(Evaluation).order_by(Evaluation.id)).scalars().all()
+    )
+
+    root = ET.Element(
+        "evaluations", exported=datetime.now().isoformat(timespec="seconds")
+    )
+    for evaluation in evaluations:
+        root.append(_build_evaluation_xml(evaluation))
+
+    return _xml_response(root, "toutes_evaluations")
 
 
 @bp.get("/api/admin/evaluations/<int:evaluation_id>/dashboard")

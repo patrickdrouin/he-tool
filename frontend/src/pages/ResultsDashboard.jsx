@@ -31,7 +31,11 @@ import toast from "react-hot-toast";
 import Spinner from "../components/Spinner";
 import { useEvaluations } from "../features/evaluations/useEvaluations";
 import { getEvaluationIaa, getEvaluationResults } from "../services/apiEvaluations";
-import { getEvaluationDashboard, exportEvaluationXml } from "../services/apiAdmin";
+import {
+  getEvaluationDashboard,
+  exportEvaluationXml,
+  exportAllEvaluationsXml,
+} from "../services/apiAdmin";
 import { downloadTsv } from "../utils/tsv";
 
 import "../assets/resultsDashboard.css";
@@ -682,6 +686,7 @@ const ALL_RESULTS_HEADER =
 export default function ResultsDashboardPage() {
   const [evaluationIndex, setEvaluationIndex] = useState(0);
   const [isExportingXml, setIsExportingXml] = useState(false);
+  const [isExportingAllXml, setIsExportingAllXml] = useState(false);
   const [isExportingAll, setIsExportingAll] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sort, setSort] = useState({ key: "severity", dir: "desc" });
@@ -911,6 +916,25 @@ export default function ResultsDashboardPage() {
               title="Combine les résultats de toutes les évaluations dans un seul fichier TSV"
             >
               {isExportingAll ? "Export en cours…" : "Télécharger tout (toutes les évaluations)"}
+            </button>
+          )}
+          {evaluations && evaluations.length > 0 && (
+            <button
+              className="btn btn-secondary"
+              disabled={isExportingAllXml}
+              onClick={async () => {
+                setIsExportingAllXml(true);
+                try {
+                  await exportAllEvaluationsXml({ filename: "toutes_evaluations.xml" });
+                } catch (err) {
+                  toast.error(err.message);
+                } finally {
+                  setIsExportingAllXml(false);
+                }
+              }}
+              title="Toutes les évaluations, avec toutes les annotations, dans un seul fichier XML"
+            >
+              {isExportingAllXml ? "Export en cours…" : "Télécharger tout XML"}
             </button>
           )}
           {tsvRows && tsvRows.length > 0 && (

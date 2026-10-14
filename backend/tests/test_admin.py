@@ -172,3 +172,74 @@ def test_dashboard_not_found(auth_client):
     db.session.commit()
     response = client.get("/api/admin/evaluations/999999/dashboard")
     assert response.status_code == 404
+
+
+def test_export_all_xml_includes_every_evaluation(
+    auth_client,
+    create_evaluation,
+    create_document,
+    create_bitext,
+    create_annotation,
+    create_system,
+    create_annotation_system,
+    create_marking,
+):
+    from xml.etree import ElementTree as ET
+
+    client, user = auth_client
+    user.isAdmin = True
+    db.session.commit()
+
+    document = create_document(name="Doc 1")
+    system = create_system(name="DeepL")
+
+    eval_a = create_evaluation(name="Eval A")
+    bitext_a = create_bitext(document=document, source="The cat is black.", target="")
+    ann_a = create_annotation(user=user, evaluation=eval_a, bitext=bitext_a, is_annotated=True)
+    create_annotation_system(annotation=ann_a, system=system, translation="Le chat est noire.")
+    create_marking(
+        annotation=ann_a,
+        system=system,
+        error_start=3,
+        error_end=3,
+        error_category="A01",
+        error_severity="major",
+        is_source=False,
+    )
+
+    eval_b = create_evaluation(name="Eval B")
+    bitext_b = create_bitext(document=document, source="Hello.", target="")
+    ann_b = create_annotation(user=user, evaluation=eval_b, bitext=bitext_b)
+    create_annotation_system(annotation=ann_b, system=system, translation="Bonjour.")
+
+    response = client.get("/api/admin/export/xml")
+    assert response.status_code == 200
+    assert "toutes_evaluations.xml" in response.headers["Content-Disposition"]
+
+    root = ET.fromstring(response.data)
+    assert root.tag == "evaluations"
+    evals = root.findall("evaluation")
+    assert [e.get("name") for e in evals] == ["Eval A", "Eval B"]
+
+    ann_el = evals[0].find("segment/annotation")
+    assert evals[0].find("segment").get("document") == "Doc 1"
+    assert ann_el.get("annotator") == user.email
+    assert ann_el.get("system") == "DeepL"
+    assert ann_el.get("score") == "5"
+    marking = ann_el.find("marking")
+    assert marking.get("category") == "Accuracy/Mistranslation"
+    assert marking.get("categoryCode") == "A01"
+    assert marking.get("weight") == "5"
+    assert marking.find("span").text == "noire."
+
+    # Annotation without markings is still exported
+    ann_b_el = evals[1].find("segment/annotation")
+    assert ann_b_el.get("completed") == "false"
+    assert ann_b_el.find("translation").text == "Bonjour."
+    assert ann_b_el.findall("marking") == []
+
+
+def test_export_all_xml_requires_admin(auth_client):
+    client, _ = auth_client
+    response = client.get("/api/admin/export/xml")
+    assert response.status_code == 403
